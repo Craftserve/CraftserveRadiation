@@ -1,0 +1,4 @@
+potion-duration: 10 # in minutes
+region-name: km_safe_from_radiation
+world-names:
+- world

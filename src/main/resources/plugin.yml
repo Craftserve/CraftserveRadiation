@@ -1,0 +1,13 @@
+name: '${project.name}'
+version: '${project.version}'
+authors: ${authors}
+website: 'https://craftserve.pl'
+main: pl.craftserve.radiation.RadiationPlugin
+api-version: '${apiVersion}'
+description: Makes world radioactive
+depend: ['WorldGuard']
+
+permissions:
+  craftserveradiation.ad:
+    description: 'Gives access to print Craftserve advertisement.'
+    default: op
