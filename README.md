@@ -18,6 +18,17 @@ world-names:
 - world
 ```
 
+Pierwsze uruchomenie
+---
+
+Przy pierwszym uruchomieniu pluginu potrzebujesz ustalić region w pluginie WorldGuard, który oznaczy obszar wolny od radiacji. W innym wypadku strefa radiacji nie będzie działać.
+
+Potrzebujesz do tego różdżki WorldEdit, domyślnie jest to drewniana siekiera. Możesz ją sobie dać komendą `//wand`. Następnie używając tej różdżki musisz sobie zrobić zaznaczenie. Klikając LPM różdżką zaznaczasz pierwszy punkt, klikając PPM zaznaczasz drugi punkt. Gdy zaznaczysz oba punkty, a mają to być skrajne punkty, najdalej od siebie oddalone możesz powiększyć zaznaczenie, aby objęło całą wysokość świata - robisz to komendą `//expand vert`. W innym przypadku zaznaczenie będzie obejmowało wyłącznie obszar na wysokości którą zaznaczyłeś (czyli między oboma punktami).
+
+Teraz posiadając zaznaczenie możesz sobie stworzyć region. Domyślna nazwa regionu to `km_safe_from_radiation`. Jeżeli ta nazwa nie została zmieniona w konfiguracji pluginu wpisujesz `/rg create km_safe_from_radiation`. Tak oto stworzyłeś region. Teraz musisz zdjąć z niego ochronę, ponieważ tylko OP może na nim budować i niszczyć. Robisz to komendą `/rg flag km_safe_from_radiation passthrough allow`.
+
+Teraz po wyjściu z tego regionu powinien pokazywać się boss bar oraz gracze powinni otrzymywać obrażenia.
+
 Pobieranie
 ---
 
@@ -26,4 +37,4 @@ Najnowsze stabilne kompilacje znajdują sie w https://github.com/Craftserve/Craf
 Kompilacja
 ---
 
-Projekt korzysta z [Apache Maven](https://maven.apache.org/). Wykonaj `mvn clean install` aby go zbudować.
+Projekt korzysta z [Apache Maven](https://maven.apache.org/). Wykonaj `mvn clean install` aby go zbudować. Obecnie plugin zależny jest od NMS. Potrzebujesz sobie lokalnie zbudować [Paper](https://github.com/PaperMC/Paper).
