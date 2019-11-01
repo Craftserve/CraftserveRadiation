@@ -58,6 +58,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private static final byte TRUE = 1;
 
+    private static final int BREW_SLOTS = 3;
+
     private final Plugin plugin;
     private final LugolsIodineEffect effect;
     private final String name;
@@ -160,9 +162,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return;
         }
 
-        boolean modified = false;
+        boolean[] modified = new boolean[BREW_SLOTS];
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < BREW_SLOTS; i++) {
             ItemStack result = window.results[i];
             if (result == null) {
                 continue; // nothing in this slot
@@ -178,18 +180,20 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
                 this.convert(potionMeta);
                 result.setItemMeta(potionMeta);
 
-                modified = true;
+                modified[i] = true;
             }
         }
 
         // delay this, because nms changes item stacks after BrewEvent is called
-        if (modified) {
-            this.plugin.getServer().getScheduler().runTask(this.plugin, () -> {
-                for (int i = 0; i < 3; i++) {
-                    inventory.setContents(window.createContents());
+        this.plugin.getServer().getScheduler().runTask(this.plugin, () -> {
+            for (int i = 0; i < BREW_SLOTS; i++) {
+                if (modified[i]) {
+                    ItemStack[] contents = inventory.getContents();
+                    contents[i] = window.getResult(i);
+                    inventory.setContents(contents);
                 }
-            });
-        }
+            }
+        });
     }
 
     private void convert(PotionMeta potionMeta) {
@@ -242,15 +246,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return new BrewingStandWindow(ingredient, fuel, Arrays.copyOfRange(contents, 0, 3));
         }
 
-        public ItemStack[] createContents() {
-            ItemStack[] contents = new ItemStack[5];
-            contents[0] = this.results[0];
-            contents[1] = this.results[1];
-            contents[2] = this.results[2];
-
-            contents[3] = this.ingredient;
-            contents[4] = this.fuel;
-            return contents;
+        public ItemStack getResult(int index) {
+            return this.results[index];
         }
     }
 }
