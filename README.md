@@ -18,7 +18,7 @@ world-names:
 - world
 ```
 
-Pierwsze uruchomenie
+Pierwsze uruchomienie
 ---
 
 Przy pierwszym uruchomieniu pluginu potrzebujesz ustalić region w pluginie WorldGuard, który oznaczy obszar wolny od radiacji. W innym wypadku strefa radiacji nie będzie działać.
