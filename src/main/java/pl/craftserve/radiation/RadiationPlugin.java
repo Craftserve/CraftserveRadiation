@@ -16,14 +16,12 @@
 
 package pl.craftserve.radiation;
 
-import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
@@ -105,9 +103,5 @@ public final class RadiationPlugin extends JavaPlugin {
 
     public LugolsIodineEffect getEffect() {
         return this.effect;
-    }
-
-    public NamespacedKey createKey(String key) {
-        return new NamespacedKey(this, Objects.requireNonNull(key, "key"));
     }
 }

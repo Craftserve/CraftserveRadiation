@@ -71,8 +71,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     }
 
     public void enable() {
-        this.potionKey = this.plugin.createKey("lugols_iodine");
-        this.durationKey = this.plugin.createKey("duration");
+        this.potionKey = new NamespacedKey(this.plugin, "lugols_iodine");
+        this.durationKey = new NamespacedKey(this.plugin, "duration");
 
         PotionRegistry potion = IRegistry.a(IRegistry.POTION, this.potionKey.getKey(), new PotionRegistry());
 

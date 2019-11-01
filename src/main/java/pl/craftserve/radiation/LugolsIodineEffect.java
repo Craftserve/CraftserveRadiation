@@ -43,8 +43,8 @@ public class LugolsIodineEffect implements Listener {
     }
 
     public void enable() {
-        this.initialSecondsKey = this.plugin.createKey("initial_seconds");
-        this.secondsLeftKey = this.plugin.createKey("seconds_left");
+        this.initialSecondsKey = new NamespacedKey(this.plugin, "initial_seconds");
+        this.secondsLeftKey = new NamespacedKey(this.plugin, "seconds_left");
 
         this.task = new Task();
         this.task.runTaskTimer(this.plugin, 0L, 20L);
