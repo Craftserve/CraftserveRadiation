@@ -24,6 +24,8 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+
+        <finalName>craftserve-radiation-${project.version}</finalName>
     </build>
 
     <repositories>
