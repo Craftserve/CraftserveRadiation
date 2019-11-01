@@ -160,6 +160,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return;
         }
 
+        boolean modified = false;
+
         for (int i = 0; i < 3; i++) {
             ItemStack result = window.results[i];
             if (result == null) {
@@ -175,15 +177,19 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             if (potionMeta.getBasePotionData().getType().equals(PotionType.THICK)) {
                 this.convert(potionMeta);
                 result.setItemMeta(potionMeta);
+
+                modified = true;
             }
         }
 
         // delay this, because nms changes item stacks after BrewEvent is called
-        this.plugin.getServer().getScheduler().runTask(this.plugin, () -> {
-            for (int i = 0; i < 3; i++) {
-                inventory.setContents(window.createContents());
-            }
-        });
+        if (modified) {
+            this.plugin.getServer().getScheduler().runTask(this.plugin, () -> {
+                for (int i = 0; i < 3; i++) {
+                    inventory.setContents(window.createContents());
+                }
+            });
+        }
     }
 
     private void convert(PotionMeta potionMeta) {
