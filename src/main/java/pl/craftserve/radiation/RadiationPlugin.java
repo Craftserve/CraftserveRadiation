@@ -74,7 +74,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
 
-        worldNames.forEach(worldName -> {
+        for (String worldName : worldNames) {
             Function<Player, Boolean> isSafe = player -> {
                 if (regionName == null) {
                     return true;
@@ -100,7 +100,7 @@ public final class RadiationPlugin extends JavaPlugin {
             };
 
             this.radiations.add(new Radiation(this, isSafe));
-        });
+        }
 
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, "Płyn Lugola", potionDuration);
