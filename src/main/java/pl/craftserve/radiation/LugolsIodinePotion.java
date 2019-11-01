@@ -38,6 +38,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
 
@@ -57,15 +58,17 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private static final byte TRUE = 1;
 
-    private final RadiationPlugin plugin;
+    private final Plugin plugin;
+    private final LugolsIodineEffect effect;
     private final String name;
     private final int duration; // in minutes
 
     private NamespacedKey potionKey;
     private NamespacedKey durationKey;
 
-    public LugolsIodinePotion(RadiationPlugin plugin, String name, int duration) {
+    public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, String name, int duration) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.effect = Objects.requireNonNull(effect, "effect");
         this.name = Objects.requireNonNull(name, "name");
         this.duration = duration;
     }
@@ -129,13 +132,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             player.removePotionEffect(effect.getType());
         }
 
-        LugolsIodineEffect effect = this.plugin.getEffect();
-        if (effect != null) {
-            int durationSeconds = duration * 60;
-            effect.setEffect(player, durationSeconds);
+        int durationSeconds = duration * 60;
+        this.effect.setEffect(player, durationSeconds);
 
-            this.broadcastConsumption(player);
-        }
+        this.broadcastConsumption(player);
     }
 
     private void broadcastConsumption(Player player) {

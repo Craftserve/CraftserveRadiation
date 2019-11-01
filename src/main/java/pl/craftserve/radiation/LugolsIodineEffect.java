@@ -27,6 +27,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Objects;
@@ -35,10 +36,10 @@ public class LugolsIodineEffect implements Listener {
     private NamespacedKey initialSecondsKey;
     private NamespacedKey secondsLeftKey;
 
-    private final RadiationPlugin plugin;
+    private final Plugin plugin;
     private Task task;
 
-    public LugolsIodineEffect(RadiationPlugin plugin) {
+    public LugolsIodineEffect(Plugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 

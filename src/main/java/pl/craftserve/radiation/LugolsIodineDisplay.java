@@ -26,6 +26,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
@@ -37,12 +38,14 @@ public class LugolsIodineDisplay implements Listener {
     private static final String TITLE = ChatColor.GREEN + "Działanie Płynu Lugola";
 
     private final Map<UUID, BossBar> displayMap = new HashMap<>(128);
-    private final RadiationPlugin plugin;
+    private final Plugin plugin;
+    private final LugolsIodineEffect effect;
 
     private Task task;
 
-    public LugolsIodineDisplay(RadiationPlugin plugin) {
+    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effect) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.effect = Objects.requireNonNull(effect, "effect");
     }
 
     public void enable() {
@@ -101,11 +104,6 @@ public class LugolsIodineDisplay implements Listener {
     class Task extends BukkitRunnable {
         @Override
         public void run() {
-            LugolsIodineEffect effect = plugin.getEffect();
-            if (effect == null) {
-                return;
-            }
-
             plugin.getServer().getOnlinePlayers().forEach(player -> {
                 LugolsIodineEffect.Effect playerEffect = effect.getEffect(player);
 

@@ -16,19 +16,28 @@
 
 package pl.craftserve.radiation;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
     private final List<Radiation> radiations = new ArrayList<>();
 
-    private LugolsIodinePotion potion;
     private LugolsIodineEffect effect;
+    private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
 
     private CraftserveListener craftserveListener;
@@ -63,16 +72,44 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
-        worldNames.forEach(worldName -> this.radiations.add(new Radiation(this, worldName, regionName)));
+        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
 
-        this.potion = new LugolsIodinePotion(this, "Płyn Lugola", potionDuration);
+        worldNames.forEach(worldName -> {
+            Function<Player, Boolean> isSafe = player -> {
+                if (regionName == null) {
+                    return true;
+                }
+
+                World world = player.getServer().getWorld(worldName);
+                if (world == null) {
+                    return true;
+                }
+
+                RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
+                if (regionManager == null) {
+                    return true;
+                }
+
+                ProtectedRegion region = regionManager.getRegion(regionName);
+                if (region == null) {
+                    return true;
+                }
+
+                BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
+                return region.contains(playerLocation);
+            };
+
+            this.radiations.add(new Radiation(this, isSafe));
+        });
+
         this.effect = new LugolsIodineEffect(this);
-        this.display = new LugolsIodineDisplay(this);
+        this.potion = new LugolsIodinePotion(this, this.effect, "Płyn Lugola", potionDuration);
+        this.display = new LugolsIodineDisplay(this, this.effect);
 
         this.radiations.forEach(Radiation::enable);
 
-        this.potion.enable();
         this.effect.enable();
+        this.potion.enable();
         this.display.enable();
 
         this.craftserveListener = new CraftserveListener(this);
@@ -89,19 +126,15 @@ public final class RadiationPlugin extends JavaPlugin {
             this.display.disable();
         }
 
-        if (this.effect != null) {
-            this.effect.disable();
-        }
-
         if (this.potion != null) {
             this.potion.disable();
         }
 
+        if (this.effect != null) {
+            this.effect.disable();
+        }
+
         this.radiations.forEach(Radiation::disable);
         this.radiations.clear();
-    }
-
-    public LugolsIodineEffect getEffect() {
-        return this.effect;
     }
 }

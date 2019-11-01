@@ -17,15 +17,8 @@
 package pl.craftserve.radiation;
 
 import com.google.common.collect.ImmutableSet;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
-import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -36,6 +29,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -44,6 +38,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 public class Radiation implements Listener {
@@ -78,17 +73,15 @@ public class Radiation implements Listener {
 
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
-    private final RadiationPlugin plugin;
-    private String worldName;
-    private final String regionId;
+    private final Plugin plugin;
+    private final Function<Player, Boolean> isSafe;
 
     private BossBar bossBar;
     private Task task;
 
-    public Radiation(RadiationPlugin plugin, String worldName, String regionId) {
+    public Radiation(Plugin plugin, Function<Player, Boolean> isSafe) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
-        this.worldName = Objects.requireNonNull(worldName, "worldName");
-        this.regionId = Objects.requireNonNull(regionId, "regionId");
+        this.isSafe = Objects.requireNonNull(isSafe, "isSafe");
     }
 
     public void enable() {
@@ -178,48 +171,26 @@ public class Radiation implements Listener {
         public void run() {
             Server server = plugin.getServer();
 
-            World world = server.getWorld(worldName);
-            if (world == null) {
-                return;
-            }
-
-            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-            RegionManager regionManager = container.get(BukkitAdapter.adapt(world));
-            if (regionManager == null) {
-                return;
-            }
-
-            ProtectedRegion region = regionManager.getRegion(regionId);
-            if (region == null) {
-                return;
-            }
-
             server.getOnlinePlayers().forEach(player -> {
-                if (worldName.equals(player.getWorld().getName())) {
-                    BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
-                    boolean safe = region.contains(playerLocation);
+                if (isSafe.apply(player)) {
+                    removeAffectedPlayer(player, true);
+                } else {
+                    RadiationEvent event = new RadiationEvent(player);
+                    server.getPluginManager().callEvent(event);
 
-                    if (!safe) {
-                        RadiationEvent event = new RadiationEvent(player);
-                        server.getPluginManager().callEvent(event);
+                    boolean showBossBar = event.shouldShowWarning();
+                    boolean cancel = event.isCancelled();
 
-                        boolean showBossBar = event.shouldShowWarning();
-                        boolean cancel = event.isCancelled();
+                    if (!cancel) {
+                        this.hurt(player);
+                        addAffectedPlayer(player, showBossBar);
+                        return;
+                    }
 
-                        if (!cancel) {
-                            this.hurt(player);
-                            addAffectedPlayer(player, showBossBar);
-                            return;
-                        }
-
-                        if (showBossBar) {
-                            addBossBar(player);
-                            return;
-                        }
+                    if (showBossBar) {
+                        addBossBar(player);
                     }
                 }
-
-                removeAffectedPlayer(player, true);
             });
         }
 

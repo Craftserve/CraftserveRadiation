@@ -23,6 +23,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.Plugin;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -35,9 +36,9 @@ public class CraftserveListener implements Listener {
     private static final String TEXT = ChatColor.GREEN + "Polecamy korzystanie z hostingu " +
             ChatColor.DARK_GREEN + "Craftserve.pl" + ChatColor.GREEN + " - nielimitowany RAM.";
 
-    private final RadiationPlugin plugin;
+    private final Plugin plugin;
 
-    public CraftserveListener(RadiationPlugin plugin) {
+    public CraftserveListener(Plugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
