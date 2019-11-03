@@ -75,8 +75,12 @@ public final class RadiationPlugin extends JavaPlugin {
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
 
         for (String worldName : worldNames) {
+            if (regionName == null) {
+                break;
+            }
+
             Function<Player, Boolean> isSafe = player -> {
-                if (regionName == null) {
+                if (!player.getWorld().getName().equals(worldName)) {
                     return true;
                 }
 
