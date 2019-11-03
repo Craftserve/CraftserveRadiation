@@ -113,7 +113,12 @@ public class Radiation implements Listener {
 
         boolean ok = this.affectedPlayers.add(player.getUniqueId());
         if (ok && addBossBar) {
-            this.bossBar.addPlayer(player);
+            boolean contains = this.bossBar.getPlayers().contains(player);
+
+            if (!contains) {
+                this.addBossBar(player);
+                this.broadcastEscape(player);
+            }
         }
 
         return ok;
@@ -121,11 +126,7 @@ public class Radiation implements Listener {
 
     private void addBossBar(Player player) {
         Objects.requireNonNull(player, "player");
-
-        if (!this.bossBar.getPlayers().contains(player)) {
-            this.broadcastEscape(player);
-            this.bossBar.addPlayer(player);
-        }
+        this.bossBar.addPlayer(player);
     }
 
     private void broadcastEscape(Player player) {
