@@ -139,7 +139,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     private void broadcastConsumption(Player player) {
         Objects.requireNonNull(player, "player");
 
-        String message = ChatColor.RED + player.getName() + " wypił/a " + this.name + ".";
+        String message = ChatColor.RED + player.getDisplayName() + ChatColor.RESET + ChatColor.RED + " wypił/a " + this.name + ".";
         this.plugin.getLogger().log(Level.INFO, message);
 
         for (Player online : this.plugin.getServer().getOnlinePlayers()) {

@@ -132,7 +132,7 @@ public class Radiation implements Listener {
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
 
-        String message = ChatColor.RED + player.getName() + " uciekł/a do strefy radioaktywnej.";
+        String message = ChatColor.RED + player.getDisplayName() + ChatColor.RESET + ChatColor.RED + " uciekł/a do strefy radioaktywnej.";
         this.plugin.getLogger().log(Level.INFO, message);
 
         for (Player online : this.plugin.getServer().getOnlinePlayers()) {
