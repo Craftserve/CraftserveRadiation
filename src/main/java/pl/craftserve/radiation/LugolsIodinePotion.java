@@ -39,7 +39,6 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
 
 import java.lang.reflect.Method;
@@ -130,9 +129,6 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         }
 
         Player player = event.getPlayer();
-        for (PotionEffect effect : Radiation.EFFECTS) {
-            player.removePotionEffect(effect.getType());
-        }
 
         int durationSeconds = duration * 60;
         this.effect.setEffect(player, durationSeconds);
