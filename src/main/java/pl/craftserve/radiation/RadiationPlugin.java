@@ -18,10 +18,16 @@ package pl.craftserve.radiation;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.commands.task.RegionAdder;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -39,20 +45,17 @@ public final class RadiationPlugin extends JavaPlugin {
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
-
     private CraftserveListener craftserveListener;
 
     @Override
     public void onEnable() {
         Server server = this.getServer();
         this.saveDefaultConfig();
-
         //
         // Loading configuration
         //
 
         FileConfiguration config = this.getConfig();
-
         int potionDuration = config.getInt("potion-duration", 10); // in minutes
         if (potionDuration <= 0) {
             this.getLogger().log(Level.SEVERE, "\"potion-duration\" option must be positive.");
@@ -61,7 +64,6 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         String regionName = config.getString("region-name", "km_safe_from_radiation");
-
         List<String> worldNames = config.getStringList("world-names");
         if (worldNames.isEmpty()) {
             this.getLogger().log(Level.SEVERE, "No world names defined. Loading in the overworld...");
@@ -72,11 +74,52 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
+
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+
 
         for (String worldName : worldNames) {
             if (regionName == null) {
                 break;
+            }
+
+            if(config.getBoolean("use-radius")){ //check if user wants to use radius instead of handmade region
+                int radius = config.getInt("radius");
+
+                World world = server.getWorld(worldName);
+
+                Location spawnLocation = world.getSpawnLocation();
+
+                BlockVector3 origin = BlockVector3.at(spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ());
+                BlockVector3 size = BlockVector3.ONE.multiply(radius);
+
+                BlockVector3 minPoint = origin.subtract(size);
+                BlockVector3 maxPoint = origin.add(size);
+
+                RegionManager worldRegionManager = regionContainer.get(BukkitAdapter.adapt(server.getWorld(worldName)));
+
+                ProtectedCuboidRegion region = new ProtectedCuboidRegion(regionName, origin.subtract(size), origin.add(size)); //create new region object
+                RegionAdder regionAdder = null;
+                if(!worldRegionManager.hasRegion(regionName)){ //check if region exists
+                    //does not
+                    region.setFlag(Flags.PASSTHROUGH, StateFlag.State.ALLOW); //allow players to break blocks in new region
+                    regionAdder = new RegionAdder(worldRegionManager, region);
+                }else{
+                    //does
+                    ProtectedRegion existing = worldRegionManager.getRegion(regionName);
+                    if(!existing.getMinimumPoint().equals(minPoint) || !existing.getMaximumPoint().equals(maxPoint)){
+                        region.copyFrom(existing);
+                        regionAdder = new RegionAdder(worldRegionManager, region);
+                    }
+                }
+
+                if(regionAdder != null) {
+                    try {
+                        regionAdder.call();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
             Function<Player, Boolean> isSafe = player -> {
