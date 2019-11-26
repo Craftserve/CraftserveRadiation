@@ -115,8 +115,7 @@ public final class RadiationPlugin extends JavaPlugin {
                     try {
                         regionAdder.call();
                     } catch (Exception e) {
-                        this.getLogger().log(Level.SEVERE, "Wystapil blad podczas tworzenia regionu " + regionName);
-                        e.printStackTrace();
+                        this.getLogger().log(Level.SEVERE, "Wystapil blad podczas tworzenia regionu " + regionName, e);
                     }
                 }
             }
