@@ -1,8 +1,6 @@
 potion-duration: 10 # in minutes
 region-name: km_safe_from_radiation
-# Set this to false when you want to create safe region by yourself
-use-radius: true
-#Radius from spawnpoint, where safe region should be
-radius: 250
+use-radius: true # Usataw wartosc na true, jezeli chcesz, aby strefa wolna od radiacji byla tworzona automatycznie od punktu spawnu
+radius: 250 # Promien, w którym od punktu spawnu powinna obowiązywać strefa wolna od radiacji
 world-names:
 - world
