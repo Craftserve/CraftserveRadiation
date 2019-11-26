@@ -38,8 +38,8 @@ import java.util.function.Function;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
-
     private final List<Radiation> radiations = new ArrayList<>();
+
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
@@ -103,7 +103,7 @@ public final class RadiationPlugin extends JavaPlugin {
                     if (!existing.getMinimumPoint().equals(minPoint) || !existing.getMaximumPoint().equals(maxPoint)) {
                         region.copyFrom(existing);
                         regionAdder = new RegionAdder(worldRegionManager, region);
-                        this.getLogger().log(Level.INFO, "Aktualnie istniejacy region obejmuje inny obszar niz w konfiguracji, nastapi jego redefinicja.");
+                        this.getLogger().log(Level.INFO, "The currently existing region covers a different area than in the configuration, it will be redefined.");
                     }
 
                 } else {
@@ -115,7 +115,7 @@ public final class RadiationPlugin extends JavaPlugin {
                     try {
                         regionAdder.call();
                     } catch (Exception e) {
-                        this.getLogger().log(Level.SEVERE, "Wystapil blad podczas tworzenia regionu " + regionName, e);
+                        this.getLogger().log(Level.SEVERE, "Error occured when tried to create region with name " + regionName, e);
                     }
                 }
             }
