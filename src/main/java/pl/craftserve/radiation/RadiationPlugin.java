@@ -18,7 +18,6 @@ package pl.craftserve.radiation;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.commands.task.RegionAdder;
 import com.sk89q.worldguard.protection.flags.Flags;
@@ -27,7 +26,6 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -40,17 +38,19 @@ import java.util.function.Function;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
-    private final List<Radiation> radiations = new ArrayList<>();
 
+    private final List<Radiation> radiations = new ArrayList<>();
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
+
     private CraftserveListener craftserveListener;
 
     @Override
     public void onEnable() {
         Server server = this.getServer();
         this.saveDefaultConfig();
+
         //
         // Loading configuration
         //
@@ -64,6 +64,7 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         String regionName = config.getString("region-name", "km_safe_from_radiation");
+
         List<String> worldNames = config.getStringList("world-names");
         if (worldNames.isEmpty()) {
             this.getLogger().log(Level.SEVERE, "No world names defined. Loading in the overworld...");
@@ -74,49 +75,47 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
-
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-
 
         for (String worldName : worldNames) {
             if (regionName == null) {
                 break;
             }
 
-            if(config.getBoolean("use-radius")){ //check if user wants to use radius instead of handmade region
-                int radius = config.getInt("radius");
+            if (config.getBoolean("use-radius", true)) {
+                int radius = config.getInt("radius", 250);
 
                 World world = server.getWorld(worldName);
 
-                Location spawnLocation = world.getSpawnLocation();
-
-                BlockVector3 origin = BlockVector3.at(spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ());
+                BlockVector3 origin = BukkitAdapter.asBlockVector(world.getSpawnLocation());
                 BlockVector3 size = BlockVector3.ONE.multiply(radius);
-
                 BlockVector3 minPoint = origin.subtract(size);
                 BlockVector3 maxPoint = origin.add(size);
 
-                RegionManager worldRegionManager = regionContainer.get(BukkitAdapter.adapt(server.getWorld(worldName)));
+                RegionManager worldRegionManager = regionContainer.get(BukkitAdapter.adapt(world));
 
-                ProtectedCuboidRegion region = new ProtectedCuboidRegion(regionName, origin.subtract(size), origin.add(size)); //create new region object
+                ProtectedCuboidRegion region = new ProtectedCuboidRegion(regionName, minPoint, maxPoint);
                 RegionAdder regionAdder = null;
-                if(!worldRegionManager.hasRegion(regionName)){ //check if region exists
-                    //does not
-                    region.setFlag(Flags.PASSTHROUGH, StateFlag.State.ALLOW); //allow players to break blocks in new region
-                    regionAdder = new RegionAdder(worldRegionManager, region);
-                }else{
-                    //does
+
+                if (worldRegionManager.hasRegion(regionName)) {
                     ProtectedRegion existing = worldRegionManager.getRegion(regionName);
-                    if(!existing.getMinimumPoint().equals(minPoint) || !existing.getMaximumPoint().equals(maxPoint)){
+
+                    if (!existing.getMinimumPoint().equals(minPoint) || !existing.getMaximumPoint().equals(maxPoint)) {
                         region.copyFrom(existing);
                         regionAdder = new RegionAdder(worldRegionManager, region);
+                        this.getLogger().log(Level.INFO, "Aktualnie istniejacy region obejmuje inny obszar niz w konfiguracji, nastapi jego redefinicja.");
                     }
+
+                } else {
+                    region.setFlag(Flags.PASSTHROUGH, StateFlag.State.ALLOW);
+                    regionAdder = new RegionAdder(worldRegionManager, region);
                 }
 
-                if(regionAdder != null) {
+                if (regionAdder != null) {
                     try {
                         regionAdder.call();
                     } catch (Exception e) {
+                        this.getLogger().log(Level.SEVERE, "Wystapil blad podczas tworzenia regionu " + regionName);
                         e.printStackTrace();
                     }
                 }
