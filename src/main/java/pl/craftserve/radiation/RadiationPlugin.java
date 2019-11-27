@@ -56,6 +56,7 @@ public final class RadiationPlugin extends JavaPlugin {
         //
 
         FileConfiguration config = this.getConfig();
+
         int potionDuration = config.getInt("potion-duration", 10); // in minutes
         if (potionDuration <= 0) {
             this.getLogger().log(Level.SEVERE, "\"potion-duration\" option must be positive.");
@@ -89,8 +90,8 @@ public final class RadiationPlugin extends JavaPlugin {
 
                 BlockVector3 origin = BukkitAdapter.asBlockVector(world.getSpawnLocation());
                 BlockVector3 size = BlockVector3.ONE.multiply(radius);
-                BlockVector3 minPoint = origin.subtract(size);
-                BlockVector3 maxPoint = origin.add(size);
+                BlockVector3 minPoint = origin.subtract(size).withY(0);
+                BlockVector3 maxPoint = origin.add(size).withY(255);
 
                 RegionManager worldRegionManager = regionContainer.get(BukkitAdapter.adapt(world));
 
