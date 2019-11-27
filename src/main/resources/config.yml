@@ -1,8 +1,11 @@
-potion-duration: 10 # in minutes
+# Dlugosc trwania plynu lugola w minutach
+potion-duration: 10
+# Nazwaa regionu, będzie widoczna w WorldGuard
 region-name: km_safe_from_radiation
 # Usataw wartosc na true, jezeli chcesz, aby strefa wolna od radiacji byla tworzona automatycznie od punktu spawnu
 use-radius: true
 # Promien, w którym od punktu spawnu powinna obowiązywać strefa wolna od radiacji
 radius: 250
+# lista swiatow, w ktorych ma dzialac radiacja
 world-names:
 - world
