@@ -16,12 +16,6 @@
 
 package pl.craftserve.radiation;
 
-import net.minecraft.server.v1_14_R1.IRegistry;
-import net.minecraft.server.v1_14_R1.Item;
-import net.minecraft.server.v1_14_R1.Items;
-import net.minecraft.server.v1_14_R1.PotionBrewer;
-import net.minecraft.server.v1_14_R1.PotionRegistry;
-import net.minecraft.server.v1_14_R1.Potions;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -40,8 +34,8 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionType;
+import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
@@ -50,10 +44,8 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
-    private static final PotionRegistry BASE_POTION = Potions.THICK;
 
     private static final Material INGREDIENT = Material.GHAST_TEAR;
-    private static final Item INGREDIENT_NMS = Items.GHAST_TEAR;
 
     private static final byte TRUE = 1;
 
@@ -74,27 +66,21 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         this.duration = duration;
     }
 
-    public void enable() {
+    public void enable(RadiationNmsBridge nmsBridge) {
+        Objects.requireNonNull(nmsBridge, "nmsBridge");
+
         this.potionKey = new NamespacedKey(this.plugin, "lugols_iodine");
         this.durationKey = new NamespacedKey(this.plugin, "duration");
 
-        PotionRegistry potion = IRegistry.a(IRegistry.POTION, this.potionKey.getKey(), new PotionRegistry());
-
-        try {
-            Method method = PotionBrewer.class.getDeclaredMethod("a", PotionRegistry.class, Item.class, PotionRegistry.class);
-            method.setAccessible(true);
-            method.invoke(null, BASE_POTION, INGREDIENT_NMS, potion);
-        } catch (ReflectiveOperationException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "Could not handle reflective operation.", e);
-        }
+        nmsBridge.registerLugolsIodinePotion(this.potionKey);
 
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
 
-    public void disable() {
-        HandlerList.unregisterAll(this);
+    public void disable(RadiationNmsBridge nmsBridge) {
+        nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
 
-        // TODO unregister lugols_iodine from registry
+        HandlerList.unregisterAll(this);
     }
 
     @Override
