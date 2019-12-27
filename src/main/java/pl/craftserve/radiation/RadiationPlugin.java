@@ -27,6 +27,9 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import pl.craftserve.radiation.nms.RadiationNmsBridge;
+import pl.craftserve.radiation.nms.V1_14NmsBridge;
+import pl.craftserve.radiation.nms.V1_15NmsBridge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,11 +39,32 @@ import java.util.logging.Level;
 public final class RadiationPlugin extends JavaPlugin {
     private final List<Radiation> radiations = new ArrayList<>();
 
+    private RadiationNmsBridge radiationNmsBridge;
+
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
 
     private CraftserveListener craftserveListener;
+
+    @Override
+    public void onLoad() {
+        this.radiationNmsBridge = initialiseNmsBridge();
+    }
+
+    private RadiationNmsBridge initialiseNmsBridge() {
+        String serverVersion = RadiationNmsBridge.getServerVersion(getServer());
+        this.getLogger().log(Level.INFO, "Detected server version: {0}", serverVersion);
+
+        switch (serverVersion) {
+            case "v1_14_R1":
+                return new V1_14NmsBridge(this);
+            case "v1_15_R1":
+                return new V1_15NmsBridge(this);
+            default:
+                throw new RuntimeException("Unsupported server version: " + serverVersion);
+        }
+    }
 
     @Override
     public void onEnable() {
@@ -113,7 +137,7 @@ public final class RadiationPlugin extends JavaPlugin {
         this.radiations.forEach(Radiation::enable);
 
         this.effect.enable();
-        this.potion.enable();
+        this.potion.enable(this.radiationNmsBridge);
         this.display.enable();
 
         this.craftserveListener = new CraftserveListener(this);
@@ -131,7 +155,7 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         if (this.potion != null) {
-            this.potion.disable();
+            this.potion.disable(this.radiationNmsBridge);
         }
 
         if (this.effect != null) {
