@@ -28,8 +28,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
-import pl.craftserve.radiation.nms.V1_14NmsBridge;
-import pl.craftserve.radiation.nms.V1_15NmsBridge;
+import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,20 +46,15 @@ public final class RadiationPlugin extends JavaPlugin {
 
     private CraftserveListener craftserveListener;
 
-    @Override
-    public void onLoad() {
-        this.radiationNmsBridge = initialiseNmsBridge();
-    }
-
-    private RadiationNmsBridge initialiseNmsBridge() {
+    private RadiationNmsBridge initializeNmsBridge() {
         String serverVersion = RadiationNmsBridge.getServerVersion(getServer());
         this.getLogger().log(Level.INFO, "Detected server version: {0}", serverVersion);
 
         switch (serverVersion) {
             case "v1_14_R1":
-                return new V1_14NmsBridge(this);
+                return new V1_14ToV1_15NmsBridge(this, "v1_14_R1");
             case "v1_15_R1":
-                return new V1_15NmsBridge(this);
+                return new V1_14ToV1_15NmsBridge(this, "v1_15_R1");
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
@@ -68,6 +62,14 @@ public final class RadiationPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        try {
+            this.radiationNmsBridge = this.initializeNmsBridge();
+        } catch (Exception e) {
+            this.getLogger().log(Level.SEVERE, "Failed to launch CraftserveRadiation. Plausibly your server version is unsupported.", e);
+            this.setEnabled(false);
+            return;
+        }
+
         Server server = this.getServer();
         this.saveDefaultConfig();
 

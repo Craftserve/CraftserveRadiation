@@ -67,6 +67,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     }
 
     public void enable(RadiationNmsBridge nmsBridge) {
+        Objects.requireNonNull(nmsBridge, "nmsBridge");
+
         this.potionKey = new NamespacedKey(this.plugin, "lugols_iodine");
         this.durationKey = new NamespacedKey(this.plugin, "duration");
 
@@ -76,9 +78,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     }
 
     public void disable(RadiationNmsBridge nmsBridge) {
-        HandlerList.unregisterAll(this);
-
         nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
+
+        HandlerList.unregisterAll(this);
     }
 
     @Override
