@@ -16,22 +16,31 @@
 
 package pl.craftserve.radiation;
 
+import com.google.common.base.Preconditions;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
+import pl.craftserve.metrics.pluginmetrics.Metrics;
+import pl.craftserve.metrics.pluginmetrics.RecordFactory;
+import pl.craftserve.metrics.pluginmetrics.entity.Entity;
+import pl.craftserve.metrics.pluginmetrics.entity.EntityRegistry;
+import pl.craftserve.metrics.pluginmetrics.entity.NumberEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.logging.Level;
 
@@ -45,6 +54,7 @@ public final class RadiationPlugin extends JavaPlugin {
     private LugolsIodineDisplay display;
 
     private CraftserveListener craftserveListener;
+    private Metrics metrics;
 
     private RadiationNmsBridge initializeNmsBridge() {
         String serverVersion = RadiationNmsBridge.getServerVersion(getServer());
@@ -144,10 +154,16 @@ public final class RadiationPlugin extends JavaPlugin {
 
         this.craftserveListener = new CraftserveListener(this);
         this.craftserveListener.enable();
+
+        this.startMetrics();
     }
 
     @Override
     public void onDisable() {
+        if (this.metrics != null) {
+            this.metrics.stop();
+        }
+
         if (this.craftserveListener != null) {
             this.craftserveListener.disable();
         }
@@ -166,5 +182,41 @@ public final class RadiationPlugin extends JavaPlugin {
 
         this.radiations.forEach(Radiation::disable);
         this.radiations.clear();
+    }
+
+    private void startMetrics() {
+        Preconditions.checkArgument(this.metrics == null, "Metrics is already defined");
+        this.metrics = Metrics.createWithDefaults(this);
+
+        EntityRegistry entityRegistry = this.metrics.getEntityRegistry();
+        try {
+            EntityRegistry.ConstantEntityList.collect(MetricsEntities.class).forEach(entityRegistry::register);
+        } catch (ReflectiveOperationException e) {
+            this.getLogger().log(Level.SEVERE, "Could not collect entities for " + this.getDescription().getFullName() + " plugin metrics.", e);
+        }
+
+        this.metrics.start();
+    }
+
+    public interface MetricsEntities extends EntityRegistry.ConstantEntityList {
+        Entity<Number> LUGOLS_IODINE_DURATION = new NumberEntity(key("lugols_iodine_duration"),
+                forPlugin(plugin -> plugin.potion.getDuration().getSeconds()));
+        Entity<Number> LUGOLS_IODINE_AFFECTED_COUNT = new NumberEntity(key("lugols_iodine_affected_count"),
+                forPlugin(plugin -> (int) plugin.getServer().getOnlinePlayers().stream()
+                        .filter(player -> plugin.effect.getEffect(player) != null)
+                        .count()));
+
+        static NamespacedKey key(String key) {
+            Objects.requireNonNull(key, "key");
+            return new NamespacedKey(RadiationPlugin.getPlugin(RadiationPlugin.class), key);
+        }
+
+        static <T> RecordFactory<T> forPlugin(Function<RadiationPlugin, T> supplier) {
+            Objects.requireNonNull(supplier, "supplier");
+            return metrics -> {
+                Plugin plugin = metrics.getPlugin();
+                return plugin instanceof RadiationPlugin ? supplier.apply((RadiationPlugin) plugin) : null;
+            };
+        }
     }
 }
