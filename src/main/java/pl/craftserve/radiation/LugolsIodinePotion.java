@@ -36,6 +36,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionType;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
@@ -81,6 +82,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
 
         HandlerList.unregisterAll(this);
+    }
+
+    public Duration getDuration() {
+        return Duration.ofMinutes(this.duration);
     }
 
     @Override

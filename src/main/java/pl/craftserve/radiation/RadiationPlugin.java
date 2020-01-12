@@ -45,6 +45,7 @@ public final class RadiationPlugin extends JavaPlugin {
     private LugolsIodineDisplay display;
 
     private CraftserveListener craftserveListener;
+    private MetricsHandler metricsHandler;
 
     private RadiationNmsBridge initializeNmsBridge() {
         String serverVersion = RadiationNmsBridge.getServerVersion(getServer());
@@ -144,10 +145,17 @@ public final class RadiationPlugin extends JavaPlugin {
 
         this.craftserveListener = new CraftserveListener(this);
         this.craftserveListener.enable();
+
+        this.metricsHandler = new MetricsHandler(this, server, this.getLogger(), this.effect, this.potion);
+        this.metricsHandler.start();
     }
 
     @Override
     public void onDisable() {
+        if (this.metricsHandler != null) {
+            this.metricsHandler.stop();
+        }
+
         if (this.craftserveListener != null) {
             this.craftserveListener.disable();
         }
