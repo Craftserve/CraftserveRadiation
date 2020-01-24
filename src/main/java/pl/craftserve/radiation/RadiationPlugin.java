@@ -33,6 +33,7 @@ import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
@@ -87,7 +88,7 @@ public final class RadiationPlugin extends JavaPlugin {
             return;
         }
 
-        String regionName = config.getString("region-name", "km_safe_from_radiation");
+        List<String> regionNames = config.getStringList("region-names");
 
         List<String> worldNames = config.getStringList("world-names");
         if (worldNames.isEmpty()) {
@@ -102,11 +103,11 @@ public final class RadiationPlugin extends JavaPlugin {
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
 
         for (String worldName : worldNames) {
-            if (regionName == null) {
+            if (regionNames.isEmpty()) {
                 break;
             }
 
-            Function<Player, Boolean> isSafe = player -> {
+            Predicate<Player> isSafe = player -> {
                 if (!player.getWorld().getName().equals(worldName)) {
                     return true;
                 }
@@ -121,13 +122,19 @@ public final class RadiationPlugin extends JavaPlugin {
                     return true;
                 }
 
-                ProtectedRegion region = regionManager.getRegion(regionName);
-                if (region == null) {
-                    return true;
+                for (String regionName : regionNames) {
+                    ProtectedRegion region = regionManager.getRegion(regionName);
+                    if (region == null) {
+                        continue;
+                    }
+
+                    BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
+                    if (region.contains(playerLocation)) {
+                        return true;
+                    }
                 }
 
-                BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
-                return region.contains(playerLocation);
+                return false;
             };
 
             this.radiations.add(new Radiation(this, isSafe));

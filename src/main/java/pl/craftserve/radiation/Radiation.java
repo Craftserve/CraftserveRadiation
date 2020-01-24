@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class Radiation implements Listener {
@@ -74,12 +75,12 @@ public class Radiation implements Listener {
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
     private final Plugin plugin;
-    private final Function<Player, Boolean> isSafe;
+    private final Predicate<Player> isSafe;
 
     private BossBar bossBar;
     private Task task;
 
-    public Radiation(Plugin plugin, Function<Player, Boolean> isSafe) {
+    public Radiation(Plugin plugin, Predicate<Player> isSafe) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.isSafe = Objects.requireNonNull(isSafe, "isSafe");
     }
@@ -173,7 +174,7 @@ public class Radiation implements Listener {
             Server server = plugin.getServer();
 
             server.getOnlinePlayers().forEach(player -> {
-                if (isSafe.apply(player)) {
+                if (isSafe.test(player)) {
                     removeAffectedPlayer(player, true);
                 } else {
                     RadiationEvent event = new RadiationEvent(player);
