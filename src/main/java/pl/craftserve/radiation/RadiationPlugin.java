@@ -16,11 +16,17 @@
 
 package pl.craftserve.radiation;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
@@ -100,6 +106,21 @@ public final class RadiationPlugin extends JavaPlugin {
             return;
         }
 
+        // Migrate from the old region-ID based system.
+        String legacyRegionId = config.getString("region-name");
+        if (legacyRegionId != null) {
+            boolean[] logged = new boolean[1];
+            config.getStringList("world-names").forEach(worldName -> {
+                if (!logged[0]) {
+                    logger.warning("Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
+                            "If everything went fine please completely remove \"region-name\" and \"world-names\" options from your config.yml file.");
+                    logged[0] = true;
+                }
+
+                this.migrateFromRegionId(worldName, legacyRegionId);
+            });
+        }
+
         //
         // Enabling
         //
@@ -163,5 +184,58 @@ public final class RadiationPlugin extends JavaPlugin {
         flag = RADIATION_FLAG;
         flagRegistry.register(flag);
         return flag;
+    }
+
+    /**
+     * Migrate from region-ID based method to the new flag method.
+     *
+     * @param worldName Name of the world.
+     * @param regionId ID of the region.
+     */
+    private void migrateFromRegionId(String worldName, String regionId) {
+        Objects.requireNonNull(worldName, "worldName");
+        Objects.requireNonNull(regionId, "regionId");
+        String error = "Could not migrate region " + regionId + " in world " + worldName + ": ";
+
+        World world = this.getServer().getWorld(worldName);
+        if (world == null) {
+            this.getLogger().warning(error + ": the world is unloaded.");
+            return;
+        }
+
+        Radiation.WorldGuardMatcher matcher = (player, regionContainer) -> {
+            throw new UnsupportedOperationException();
+        };
+
+        RegionContainer regionContainer = matcher.getRegionContainer();
+        if (regionContainer == null) {
+            this.getLogger().warning(error + "region container is not present.");
+            return;
+        }
+
+        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
+        if (regionManager == null) {
+            this.getLogger().warning(error + "region manager for the world is not present.");
+            return;
+        }
+
+        ProtectedRegion legacyRegion = regionManager.getRegion(regionId);
+        if (legacyRegion == null) {
+            this.getLogger().warning(error + "legacy region is not present.");
+            return;
+        }
+
+        legacyRegion.setFlag(this.radiationFlag, false);
+
+        // make __global__ radioactive
+        ProtectedRegion global = regionManager.getRegion("__global__");
+        if (global == null) {
+            global = new GlobalProtectedRegion("__global__");
+            regionManager.addRegion(global);
+        }
+
+        global.setFlag(this.radiationFlag, true);
+        this.getLogger().info("Region " + regionId + " in world " + worldName +
+                " has been successfully migrated to the new flag-based system.");
     }
 }
