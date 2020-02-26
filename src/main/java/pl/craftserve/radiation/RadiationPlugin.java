@@ -155,6 +155,10 @@ public final class RadiationPlugin extends JavaPlugin {
         this.radiations.clear();
     }
 
+    public Flag<Boolean> getRadiationFlag() {
+        return this.radiationFlag;
+    }
+
     @SuppressWarnings("unchecked")
     private Flag<Boolean> getOrCreateRadiationFlag(FlagRegistry flagRegistry) {
         Objects.requireNonNull(flagRegistry, "flagRegistry");
