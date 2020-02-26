@@ -17,8 +17,15 @@
 package pl.craftserve.radiation;
 
 import com.google.common.collect.ImmutableSet;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -208,5 +215,60 @@ public class Radiation implements Listener {
      * Something that tests if the player can be affected by the radiation.
      */
     public interface Matcher extends Predicate<Player> {
+    }
+
+    /**
+     * Base interface for all matchers using WorldGuard to test the radiation.
+     */
+    public interface WorldGuardMatcher extends Matcher {
+        @Override
+        default boolean test(Player player) {
+            WorldGuardPlatform platform = WorldGuard.getInstance().getPlatform();
+            if (platform == null) {
+                return false;
+            }
+
+            RegionContainer regionContainer = platform.getRegionContainer();
+            if (regionContainer == null) {
+                return false;
+            }
+
+            return this.test(player, regionContainer);
+        }
+
+        boolean test(Player player, RegionContainer regionContainer);
+    }
+
+    /**
+     * Tests if the given region ID not matches radiation.
+     */
+    public static class NotRegionIdMatcher implements WorldGuardMatcher {
+        private final String worldName;
+        private final String regionId;
+
+        public NotRegionIdMatcher(String worldName, String regionId) {
+            this.worldName = Objects.requireNonNull(worldName, "worldName");
+            this.regionId = Objects.requireNonNull(regionId, "regionId");
+        }
+
+        @Override
+        public boolean test(Player player, RegionContainer regionContainer) {
+            World world = player.getWorld();
+            if (!world.getName().equals(this.worldName)) {
+                return false;
+            }
+
+            RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
+            if (regionManager == null) {
+                return false;
+            }
+
+            ProtectedRegion region = regionManager.getRegion(this.regionId);
+            if (region == null) {
+                return false;
+            }
+
+            return !region.contains(BukkitAdapter.asBlockVector(player.getLocation()));
+        }
     }
 }

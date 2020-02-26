@@ -16,23 +16,14 @@
 
 package pl.craftserve.radiation;
 
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.Server;
-import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
@@ -99,38 +90,12 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
-        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-
-        for (String worldName : worldNames) {
-            if (regionName == null) {
-                break;
-            }
-
-            Radiation.Matcher matcher = player -> {
-                if (!player.getWorld().getName().equals(worldName)) {
-                    return true;
-                }
-
-                World world = player.getServer().getWorld(worldName);
-                if (world == null) {
-                    return true;
-                }
-
-                RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
-                if (regionManager == null) {
-                    return true;
-                }
-
-                ProtectedRegion region = regionManager.getRegion(regionName);
-                if (region == null) {
-                    return true;
-                }
-
-                BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
-                return !region.contains(playerLocation);
-            };
-
-            this.radiations.add(new Radiation(this, matcher));
+        // Legacy region name support
+        if (regionName != null) {
+            worldNames.forEach(worldName -> {
+                Radiation.Matcher matcher = new Radiation.NotRegionIdMatcher(worldName, regionName);
+                this.radiations.add(new Radiation(this, matcher));
+            });
         }
 
         this.effect = new LugolsIodineEffect(this);
