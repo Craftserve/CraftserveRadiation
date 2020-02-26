@@ -62,27 +62,29 @@ public final class RadiationPlugin extends JavaPlugin {
     }
 
     @Override
-    public void onEnable() {
-        try {
-            this.radiationNmsBridge = this.initializeNmsBridge();
-        } catch (Exception e) {
-            this.getLogger().log(Level.SEVERE, "Failed to launch CraftserveRadiation. Plausibly your server version is unsupported.", e);
-            this.setEnabled(false);
-            return;
+    public void onLoad() {
+        FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
+        if (flagRegistry == null) {
+            throw new IllegalStateException("Flag registry is not set! Plugin must shut down...");
         }
 
+        this.radiationFlag = this.getOrCreateRadiationFlag(flagRegistry);
+    }
+
+    @Override
+    public void onEnable() {
         Server server = this.getServer();
         Logger logger = this.getLogger();
         this.saveDefaultConfig();
 
-        FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
-        if (flagRegistry == null) {
-            logger.severe("Flag registry is not set! Plugin must shut down...");
+        try {
+            this.radiationNmsBridge = this.initializeNmsBridge();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to launch CraftserveRadiation. Plausibly your server version is unsupported.", e);
             this.setEnabled(false);
             return;
         }
 
-        this.radiationFlag = this.getOrCreateRadiationFlag(flagRegistry);
         this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag)));
 
         //
