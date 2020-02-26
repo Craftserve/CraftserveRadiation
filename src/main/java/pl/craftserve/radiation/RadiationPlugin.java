@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class RadiationPlugin extends JavaPlugin {
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
@@ -71,11 +72,14 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         Server server = this.getServer();
+        Logger logger = this.getLogger();
         this.saveDefaultConfig();
 
         FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
         if (flagRegistry == null) {
-            throw new IllegalStateException("Flag registry is not set!");
+            logger.severe("Flag registry is not set! Plugin must shut down...");
+            this.setEnabled(false);
+            return;
         }
 
         this.radiationFlag = this.getOrCreateRadiationFlag(flagRegistry);
@@ -89,17 +93,9 @@ public final class RadiationPlugin extends JavaPlugin {
 
         int potionDuration = config.getInt("potion-duration", 10); // in minutes
         if (potionDuration <= 0) {
-            this.getLogger().log(Level.SEVERE, "\"potion-duration\" option must be positive.");
+            logger.log(Level.SEVERE, "\"potion-duration\" option must be positive.");
             this.setEnabled(false);
             return;
-        }
-
-        String regionName = config.getString("region-name", "km_safe_from_radiation");
-
-        List<String> worldNames = config.getStringList("world-names");
-        if (worldNames.isEmpty()) {
-            this.getLogger().log(Level.SEVERE, "No world names defined. Loading in the overworld...");
-            worldNames.add(server.getWorlds().get(0).getName()); // overworld is always at index 0
         }
 
         //
@@ -107,8 +103,10 @@ public final class RadiationPlugin extends JavaPlugin {
         //
 
         // Legacy region name support
+        String regionName = config.getString("region-name");
         if (regionName != null) {
-            worldNames.forEach(worldName -> {
+            config.getStringList("world-names").forEach(worldName -> {
+                logger.warning("Enabling in legacy region-name mode! Please update your server with the \"radiation\" flag as soon as possible.");
                 Radiation.Matcher matcher = new Radiation.NotRegionIdMatcher(worldName, regionName);
                 this.radiations.add(new Radiation(this, matcher));
             });

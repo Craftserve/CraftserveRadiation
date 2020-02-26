@@ -227,17 +227,13 @@ public class Radiation implements Listener {
     public interface WorldGuardMatcher extends Matcher {
         @Override
         default boolean test(Player player) {
+            RegionContainer regionContainer = this.getRegionContainer();
+            return regionContainer != null && this.test(player, regionContainer);
+        }
+
+        default RegionContainer getRegionContainer() {
             WorldGuardPlatform platform = WorldGuard.getInstance().getPlatform();
-            if (platform == null) {
-                return false;
-            }
-
-            RegionContainer regionContainer = platform.getRegionContainer();
-            if (regionContainer == null) {
-                return false;
-            }
-
-            return this.test(player, regionContainer);
+            return platform != null ? platform.getRegionContainer() : null;
         }
 
         boolean test(Player player, RegionContainer regionContainer);
