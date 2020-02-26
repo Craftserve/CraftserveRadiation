@@ -18,8 +18,12 @@ package pl.craftserve.radiation;
 
 import com.google.common.collect.ImmutableSet;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
@@ -237,6 +241,26 @@ public class Radiation implements Listener {
         }
 
         boolean test(Player player, RegionContainer regionContainer);
+    }
+
+    /**
+     * Tests if the given flag matches radiation.
+     */
+    public static class FlagMatcher implements WorldGuardMatcher {
+        private final Flag<Boolean> flag;
+
+        public FlagMatcher(Flag<Boolean> flag) {
+            this.flag = Objects.requireNonNull(flag, "flag");
+        }
+
+        @Override
+        public boolean test(Player player, RegionContainer regionContainer) {
+            Location location = BukkitAdapter.adapt(player.getLocation());
+            ApplicableRegionSet regions = regionContainer.createQuery().getApplicableRegions(location);
+
+            Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
+            return value != null && value;
+        }
     }
 
     /**

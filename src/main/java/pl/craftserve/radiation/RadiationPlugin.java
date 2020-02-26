@@ -16,6 +16,10 @@
 
 package pl.craftserve.radiation;
 
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.flags.BooleanFlag;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,12 +28,16 @@ import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
+    private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
+
     private final List<Radiation> radiations = new ArrayList<>();
 
     private RadiationNmsBridge radiationNmsBridge;
+    private Flag<Boolean> radiationFlag;
 
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
@@ -64,6 +72,14 @@ public final class RadiationPlugin extends JavaPlugin {
 
         Server server = this.getServer();
         this.saveDefaultConfig();
+
+        FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
+        if (flagRegistry == null) {
+            throw new IllegalStateException("Flag registry is not set!");
+        }
+
+        this.radiationFlag = this.getOrCreateRadiationFlag(flagRegistry);
+        this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag)));
 
         //
         // Loading configuration
@@ -139,5 +155,19 @@ public final class RadiationPlugin extends JavaPlugin {
 
         this.radiations.forEach(Radiation::disable);
         this.radiations.clear();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Flag<Boolean> getOrCreateRadiationFlag(FlagRegistry flagRegistry) {
+        Objects.requireNonNull(flagRegistry, "flagRegistry");
+
+        Flag<Boolean> flag = (Flag<Boolean>) flagRegistry.get(RADIATION_FLAG.getName());
+        if (flag != null) {
+            return flag;
+        }
+
+        flag = RADIATION_FLAG;
+        flagRegistry.register(flag);
+        return flag;
     }
 }
