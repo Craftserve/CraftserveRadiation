@@ -32,7 +32,7 @@ import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public final class RadiationPlugin extends JavaPlugin {
@@ -106,7 +106,7 @@ public final class RadiationPlugin extends JavaPlugin {
                 break;
             }
 
-            Function<Player, Boolean> isSafe = player -> {
+            Radiation.Matcher matcher = player -> {
                 if (!player.getWorld().getName().equals(worldName)) {
                     return true;
                 }
@@ -127,10 +127,10 @@ public final class RadiationPlugin extends JavaPlugin {
                 }
 
                 BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
-                return region.contains(playerLocation);
+                return !region.contains(playerLocation);
             };
 
-            this.radiations.add(new Radiation(this, isSafe));
+            this.radiations.add(new Radiation(this, matcher));
         }
 
         this.effect = new LugolsIodineEffect(this);

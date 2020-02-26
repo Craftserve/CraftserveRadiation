@@ -38,7 +38,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class Radiation implements Listener {
@@ -74,14 +74,14 @@ public class Radiation implements Listener {
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
     private final Plugin plugin;
-    private final Function<Player, Boolean> isSafe;
+    private final Matcher matcher;
 
     private BossBar bossBar;
     private Task task;
 
-    public Radiation(Plugin plugin, Function<Player, Boolean> isSafe) {
+    public Radiation(Plugin plugin, Matcher matcher) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
-        this.isSafe = Objects.requireNonNull(isSafe, "isSafe");
+        this.matcher = Objects.requireNonNull(matcher, "matcher");
     }
 
     public void enable() {
@@ -173,9 +173,7 @@ public class Radiation implements Listener {
             Server server = plugin.getServer();
 
             server.getOnlinePlayers().forEach(player -> {
-                if (isSafe.apply(player)) {
-                    removeAffectedPlayer(player, true);
-                } else {
+                if (matcher.test(player)) {
                     RadiationEvent event = new RadiationEvent(player);
                     server.getPluginManager().callEvent(event);
 
@@ -191,6 +189,8 @@ public class Radiation implements Listener {
                     if (showBossBar) {
                         addBossBar(player);
                     }
+                } else {
+                    removeAffectedPlayer(player, true);
                 }
             });
         }
@@ -202,5 +202,11 @@ public class Radiation implements Listener {
                 player.addPotionEffect(effect, true);
             }
         }
+    }
+
+    /**
+     * Something that tests if the player can be affected by the radiation.
+     */
+    public interface Matcher extends Predicate<Player> {
     }
 }
