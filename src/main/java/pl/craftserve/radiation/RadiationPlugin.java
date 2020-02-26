@@ -102,16 +102,6 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
-        // Legacy region name support
-        String regionName = config.getString("region-name");
-        if (regionName != null) {
-            config.getStringList("world-names").forEach(worldName -> {
-                logger.warning("Enabling in legacy region-name mode! Please update your server with the \"radiation\" flag as soon as possible.");
-                Radiation.Matcher matcher = new Radiation.NotRegionIdMatcher(worldName, regionName);
-                this.radiations.add(new Radiation(this, matcher));
-            });
-        }
-
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, "Płyn Lugola", potionDuration);
         this.display = new LugolsIodineDisplay(this, this.effect);

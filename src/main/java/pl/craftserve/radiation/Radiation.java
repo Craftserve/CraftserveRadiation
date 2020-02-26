@@ -24,12 +24,9 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flag;
-import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
-import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -256,39 +253,6 @@ public class Radiation implements Listener {
 
             Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
             return value != null && value;
-        }
-    }
-
-    /**
-     * Tests if the given region ID not matches radiation.
-     */
-    public static class NotRegionIdMatcher implements WorldGuardMatcher {
-        private final String worldName;
-        private final String regionId;
-
-        public NotRegionIdMatcher(String worldName, String regionId) {
-            this.worldName = Objects.requireNonNull(worldName, "worldName");
-            this.regionId = Objects.requireNonNull(regionId, "regionId");
-        }
-
-        @Override
-        public boolean test(Player player, RegionContainer regionContainer) {
-            World world = player.getWorld();
-            if (!world.getName().equals(this.worldName)) {
-                return false;
-            }
-
-            RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
-            if (regionManager == null) {
-                return false;
-            }
-
-            ProtectedRegion region = regionManager.getRegion(this.regionId);
-            if (region == null) {
-                return false;
-            }
-
-            return !region.contains(BukkitAdapter.asBlockVector(player.getLocation()));
         }
     }
 }
