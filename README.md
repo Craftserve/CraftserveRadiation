@@ -27,7 +27,9 @@ Potrzebujesz do tego różdżki WorldEdit, domyślnie jest to drewniana siekiera
 
 Teraz posiadając zaznaczenie możesz sobie stworzyć region. Domyślna nazwa regionu to `km_safe_from_radiation`. Jeżeli ta nazwa nie została zmieniona w konfiguracji pluginu wpisujesz `/rg create km_safe_from_radiation`. Tak oto stworzyłeś region. Teraz musisz zdjąć z niego ochronę, ponieważ tylko OP może na nim budować i niszczyć. Robisz to komendą `/rg flag km_safe_from_radiation passthrough allow`.
 
-Teraz po wyjściu z tego regionu powinien pokazywać się boss bar oraz gracze powinni otrzymywać obrażenia.
+Kolejnym krokiem jest zdjęcie radiacji z tego regionu. Robisz to komendą `/rg flag km_safe_from_radiation radiation no`. Na końcu zakładasz radiację na cały świat, to znaczy na już istniejący globalny region dla tego świata. Robisz to komendą `/rg flag __global__ radiation yes`.
+
+Teraz po wyjściu z regionu wolnego od radiacji powinien pokazywać się boss bar oraz gracze powinni otrzymywać obrażenia.
 
 Pobieranie
 ---
