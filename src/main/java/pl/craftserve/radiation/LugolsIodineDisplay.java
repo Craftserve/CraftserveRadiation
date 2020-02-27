@@ -16,9 +16,6 @@
 
 package pl.craftserve.radiation;
 
-import org.bukkit.ChatColor;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -35,17 +32,17 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class LugolsIodineDisplay implements Listener {
-    private static final String TITLE = ChatColor.GREEN + "Działanie Płynu Lugola";
-
     private final Map<UUID, BossBar> displayMap = new HashMap<>(128);
     private final Plugin plugin;
     private final LugolsIodineEffect effect;
+    private final BaseConfig.BarConfig config;
 
     private Task task;
 
-    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effect) {
+    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effect, BaseConfig.BarConfig config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.effect = Objects.requireNonNull(effect, "effect");
+        this.config = Objects.requireNonNull(config, "config");
     }
 
     public void enable() {
@@ -98,7 +95,7 @@ public class LugolsIodineDisplay implements Listener {
     }
 
     private BossBar createBossBar() {
-        return this.plugin.getServer().createBossBar(TITLE, BarColor.GREEN, BarStyle.SEGMENTED_20);
+        return this.config.create(this.plugin.getServer());
     }
 
     class Task extends BukkitRunnable {
