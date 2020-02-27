@@ -19,6 +19,9 @@ package pl.craftserve.radiation;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -36,6 +39,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionType;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,17 +56,15 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private final Plugin plugin;
     private final LugolsIodineEffect effect;
-    private final String name;
-    private final int duration; // in minutes
+    private final Config config;
 
     private NamespacedKey potionKey;
     private NamespacedKey durationKey;
 
-    public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, String name, int duration) {
+    public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.effect = Objects.requireNonNull(effect, "effect");
-        this.name = Objects.requireNonNull(name, "name");
-        this.duration = duration;
+        this.config = Objects.requireNonNull(config, "config");
     }
 
     public void enable(RadiationNmsBridge nmsBridge) {
@@ -83,7 +85,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     }
 
     public Duration getDuration() {
-        return Duration.ofMinutes(this.duration);
+        return this.config.duration();
     }
 
     @Override
@@ -128,7 +130,12 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     private void broadcastConsumption(Player player) {
         Objects.requireNonNull(player, "player");
 
-        String message = ChatColor.RED + player.getDisplayName() + ChatColor.RESET + ChatColor.RED + " wypił/a " + this.name + ".";
+        String rawMessage = this.config.drinkMessage();
+        if (rawMessage == null) {
+            return;
+        }
+
+        String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, this.config.name());
         this.plugin.getLogger().log(Level.INFO, message);
 
         for (Player online : this.plugin.getServer().getOnlinePlayers()) {
@@ -183,13 +190,14 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private void convert(PotionMeta potionMeta) {
         Objects.requireNonNull(potionMeta, "potionMeta");
+        int durationMinutes = (int) this.config.duration().toMinutes();
 
-        potionMeta.setDisplayName(ChatColor.AQUA + this.name);
-        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + "Odporność na promieniowanie (" + this.duration + ":00)"));
+        potionMeta.setDisplayName(ChatColor.AQUA + this.config.name());
+        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + "Odporność na promieniowanie (" + durationMinutes + ":00)"));
 
         PersistentDataContainer container = potionMeta.getPersistentDataContainer();
         container.set(this.potionKey, PersistentDataType.BYTE, TRUE);
-        container.set(this.durationKey, PersistentDataType.INTEGER, this.duration);
+        container.set(this.durationKey, PersistentDataType.INTEGER, durationMinutes);
     }
 
     /**
@@ -235,6 +243,51 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         public ItemStack getResult(int index) {
             return this.results[index];
+        }
+    }
+
+    //
+    // Config
+    //
+
+    public interface Config {
+        String name();
+        Duration duration();
+        String drinkMessage();
+    }
+
+    public static class ConfigImpl extends BaseConfig implements Config {
+        private final String name;
+        private final Duration duration;
+        private final String drinkMessage;
+
+        public ConfigImpl(ConfigurationSection section) throws InvalidConfigurationException {
+            if (section == null) {
+                section = new MemoryConfiguration();
+            }
+
+            this.name = section.getString("name", "Płyn Lugola");
+            this.duration = Duration.ofMinutes(section.getInt("duration", 10));
+            this.drinkMessage = this.colorize(section.getString("drink-message", ChatColor.RED + "{0}" + ChatColor.RED + " wypił/a {1}."));
+
+            if (this.duration.isZero() || this.duration.isNegative()) {
+                throw new InvalidConfigurationException("Given potion duration must be positive.");
+            }
+        }
+
+        @Override
+        public String name() {
+            return this.name;
+        }
+
+        @Override
+        public Duration duration() {
+            return this.duration;
+        }
+
+        @Override
+        public String drinkMessage() {
+            return this.drinkMessage;
         }
     }
 }
