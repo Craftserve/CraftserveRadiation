@@ -17,6 +17,14 @@
 package pl.craftserve.radiation;
 
 import com.google.common.collect.ImmutableSet;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.boss.BarColor;
@@ -38,7 +46,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class Radiation implements Listener {
@@ -74,14 +82,14 @@ public class Radiation implements Listener {
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
     private final Plugin plugin;
-    private final Function<Player, Boolean> isSafe;
+    private final Matcher matcher;
 
     private BossBar bossBar;
     private Task task;
 
-    public Radiation(Plugin plugin, Function<Player, Boolean> isSafe) {
+    public Radiation(Plugin plugin, Matcher matcher) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
-        this.isSafe = Objects.requireNonNull(isSafe, "isSafe");
+        this.matcher = Objects.requireNonNull(matcher, "matcher");
     }
 
     public void enable() {
@@ -173,9 +181,7 @@ public class Radiation implements Listener {
             Server server = plugin.getServer();
 
             server.getOnlinePlayers().forEach(player -> {
-                if (isSafe.apply(player)) {
-                    removeAffectedPlayer(player, true);
-                } else {
+                if (matcher.test(player)) {
                     RadiationEvent event = new RadiationEvent(player);
                     server.getPluginManager().callEvent(event);
 
@@ -191,6 +197,8 @@ public class Radiation implements Listener {
                     if (showBossBar) {
                         addBossBar(player);
                     }
+                } else {
+                    removeAffectedPlayer(player, true);
                 }
             });
         }
@@ -201,6 +209,50 @@ public class Radiation implements Listener {
             for (PotionEffect effect : EFFECTS) {
                 player.addPotionEffect(effect, true);
             }
+        }
+    }
+
+    /**
+     * Something that tests if the player can be affected by the radiation.
+     */
+    public interface Matcher extends Predicate<Player> {
+    }
+
+    /**
+     * Base interface for all matchers using WorldGuard to test the radiation.
+     */
+    public interface WorldGuardMatcher extends Matcher {
+        @Override
+        default boolean test(Player player) {
+            RegionContainer regionContainer = this.getRegionContainer();
+            return regionContainer != null && this.test(player, regionContainer);
+        }
+
+        default RegionContainer getRegionContainer() {
+            WorldGuardPlatform platform = WorldGuard.getInstance().getPlatform();
+            return platform != null ? platform.getRegionContainer() : null;
+        }
+
+        boolean test(Player player, RegionContainer regionContainer);
+    }
+
+    /**
+     * Tests if the given flag matches radiation.
+     */
+    public static class FlagMatcher implements WorldGuardMatcher {
+        private final Flag<Boolean> flag;
+
+        public FlagMatcher(Flag<Boolean> flag) {
+            this.flag = Objects.requireNonNull(flag, "flag");
+        }
+
+        @Override
+        public boolean test(Player player, RegionContainer regionContainer) {
+            Location location = BukkitAdapter.adapt(player.getLocation());
+            ApplicableRegionSet regions = regionContainer.createQuery().getApplicableRegions(location);
+
+            Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
+            return value != null && value;
         }
     }
 }
