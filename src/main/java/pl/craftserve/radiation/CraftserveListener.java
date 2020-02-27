@@ -43,9 +43,9 @@ public class CraftserveListener implements Listener {
     }
 
     public void enable() {
-        boolean shouldAdvertise = false;
+        boolean shouldAdvertise;
         try {
-            shouldAdvertise = this.shouldAdverise();
+            shouldAdvertise = this.shouldAdvertise();
         } catch (UnknownHostException e) {
             this.plugin.getLogger().log(Level.SEVERE, "Could not resolve local host.", e);
             shouldAdvertise = true;
@@ -60,7 +60,7 @@ public class CraftserveListener implements Listener {
         HandlerList.unregisterAll(this);
     }
 
-    private boolean shouldAdverise() throws UnknownHostException {
+    private boolean shouldAdvertise() throws UnknownHostException {
         InetAddress localHost = InetAddress.getLocalHost();
         String hostName = localHost.getHostName();
         return !hostName.toLowerCase(Locale.US).endsWith(".craftserve.pl");
