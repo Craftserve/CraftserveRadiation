@@ -123,7 +123,7 @@ public final class RadiationPlugin extends JavaPlugin {
         this.craftserveListener = new CraftserveListener(this);
         this.craftserveListener.enable();
 
-        this.metricsHandler = new MetricsHandler(this, server, this.getLogger(), this.effect, this.potion);
+        this.metricsHandler = new MetricsHandler(this, server, logger, this.effect, this.potion);
         this.metricsHandler.start();
     }
 
