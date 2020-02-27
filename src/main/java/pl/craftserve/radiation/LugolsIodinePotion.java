@@ -45,12 +45,10 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
-
     private static final Material INGREDIENT = Material.GHAST_TEAR;
+    private static final PotionType BASE_POTION = PotionType.THICK;
 
     private static final byte TRUE = 1;
-
-    private static final int BREW_SLOTS = 3;
 
     private final Plugin plugin;
     private final LugolsIodineEffect effect;
@@ -149,9 +147,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return;
         }
 
-        boolean[] modified = new boolean[BREW_SLOTS];
+        boolean[] modified = new boolean[BrewingStandWindow.SLOTS];
 
-        for (int i = 0; i < BREW_SLOTS; i++) {
+        for (int i = 0; i < BrewingStandWindow.SLOTS; i++) {
             ItemStack result = window.results[i];
             if (result == null) {
                 continue; // nothing in this slot
@@ -163,7 +161,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
 
             PotionMeta potionMeta = (PotionMeta) itemMeta;
-            if (potionMeta.getBasePotionData().getType().equals(PotionType.THICK)) {
+            if (potionMeta.getBasePotionData().getType().equals(BASE_POTION)) {
                 this.convert(potionMeta);
                 result.setItemMeta(potionMeta);
 
@@ -173,7 +171,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         // delay this, because nms changes item stacks after BrewEvent is called
         this.plugin.getServer().getScheduler().runTask(this.plugin, () -> {
-            for (int i = 0; i < BREW_SLOTS; i++) {
+            for (int i = 0; i < BrewingStandWindow.SLOTS; i++) {
                 if (modified[i]) {
                     ItemStack[] contents = inventory.getContents();
                     contents[i] = window.getResult(i);
@@ -199,6 +197,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
      * {@link BrewerInventory}
      */
     static class BrewingStandWindow {
+        static final int SLOTS = 3;
+
         final ItemStack ingredient;
         final ItemStack fuel;
         final ItemStack[] results;
