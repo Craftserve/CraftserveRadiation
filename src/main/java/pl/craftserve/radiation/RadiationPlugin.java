@@ -98,27 +98,13 @@ public final class RadiationPlugin extends JavaPlugin {
         //
 
         FileConfiguration config = this.getConfig();
+        this.migrate(config, config.getInt("file-protocol-version-dont-touch", -1));
 
         int potionDuration = config.getInt("potion-duration", 10); // in minutes
         if (potionDuration <= 0) {
             logger.log(Level.SEVERE, "\"potion-duration\" option must be positive.");
             this.setEnabled(false);
             return;
-        }
-
-        // Migrate from the old region-ID based system.
-        String legacyRegionId = config.getString("region-name");
-        if (legacyRegionId != null) {
-            boolean[] logged = new boolean[1];
-            config.getStringList("world-names").forEach(worldName -> {
-                if (!logged[0]) {
-                    logger.warning("Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
-                            "If everything went fine please completely remove \"region-name\" and \"world-names\" options from your config.yml file.");
-                    logged[0] = true;
-                }
-
-                this.migrateFromRegionId(worldName, legacyRegionId);
-            });
         }
 
         //
@@ -184,6 +170,36 @@ public final class RadiationPlugin extends JavaPlugin {
         flag = RADIATION_FLAG;
         flagRegistry.register(flag);
         return flag;
+    }
+
+    //
+    // Migrations
+    //
+
+    private void migrate(ConfigurationSection section, int protocol) {
+        Objects.requireNonNull(section, "section");
+
+        if (protocol == -1) {
+            int potionDuration = section.getInt("potion-duration", -1); // in minutes
+            if (potionDuration > 0) {
+                section.set("lugols-iodine-potion.duration", potionDuration);
+            }
+
+            // Migrate from the old region-ID based system.
+            String legacyRegionId = section.getString("region-name");
+
+            boolean[] logged = new boolean[1];
+            section.getStringList("world-names").forEach(worldName -> {
+                if (!logged[0]) {
+                    this.getLogger().warning(
+                            "Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
+                            "If everything went fine please completely remove your config.yml file.");
+                    logged[0] = true;
+                }
+
+                this.migrateFromRegionId(worldName, legacyRegionId);
+            });
+        }
     }
 
     /**
