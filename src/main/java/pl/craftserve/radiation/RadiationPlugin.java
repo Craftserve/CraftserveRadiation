@@ -48,6 +48,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
     private RadiationNmsBridge radiationNmsBridge;
     private Flag<Boolean> radiationFlag;
+    private Config config;
 
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
@@ -93,18 +94,17 @@ public final class RadiationPlugin extends JavaPlugin {
             return;
         }
 
-        this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag)));
-
         //
-        // Loading configuration
+        // Configuration
         //
 
         FileConfiguration config = this.getConfig();
         this.migrate(config, config.getInt("file-protocol-version-dont-touch", -1));
 
-        int potionDuration = config.getInt("potion-duration", 10); // in minutes
-        if (potionDuration <= 0) {
-            logger.log(Level.SEVERE, "\"potion-duration\" option must be positive.");
+        try {
+            this.config = new ConfigImpl(config);
+        } catch (InvalidConfigurationException e) {
+            logger.log(Level.SEVERE, "Could not load configuration file.", e);
             this.setEnabled(false);
             return;
         }
@@ -113,9 +113,11 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
+        this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation()));
+
         this.effect = new LugolsIodineEffect(this);
-        this.potion = new LugolsIodinePotion(this, this.effect, "Płyn Lugola", potionDuration);
-        this.display = new LugolsIodineDisplay(this, this.effect);
+        this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
+        this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
 
         this.radiations.forEach(Radiation::enable);
 
@@ -158,6 +160,10 @@ public final class RadiationPlugin extends JavaPlugin {
 
     public Flag<Boolean> getRadiationFlag() {
         return this.radiationFlag;
+    }
+
+    public Config getPluginConfig() {
+        return this.config;
     }
 
     @SuppressWarnings("unchecked")
