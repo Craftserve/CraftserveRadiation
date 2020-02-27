@@ -27,6 +27,9 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
@@ -252,5 +255,60 @@ public final class RadiationPlugin extends JavaPlugin {
         global.setFlag(this.radiationFlag, true);
         this.getLogger().info("Region " + regionId + " in world " + worldName +
                 " has been successfully migrated to the new flag-based system.");
+    }
+
+    //
+    // Config
+    //
+
+    public interface Config {
+        BaseConfig.BarConfig lugolsIodineDisplay();
+        LugolsIodinePotion.Config lugolsIodinePotion();
+        Radiation.Config radiation();
+    }
+
+    public static class ConfigImpl extends BaseConfig implements Config {
+        private final BaseConfig.BarConfig lugolsIodineDisplay;
+        private final LugolsIodinePotion.Config lugolsIodinePotion;
+        private final Radiation.Config radiation;
+
+        public ConfigImpl(ConfigurationSection section) throws InvalidConfigurationException {
+            if (section == null) {
+                section = new MemoryConfiguration();
+            }
+
+            try {
+                this.lugolsIodineDisplay = new BaseConfig.BarConfigImpl(section.getConfigurationSection("lugols-iodine-bar"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse lugols-iodine-bar section.", e);
+            }
+
+            try {
+                this.lugolsIodinePotion = new LugolsIodinePotion.ConfigImpl(section.getConfigurationSection("lugols-iodine-potion"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse lugols-iodine-potion section.", e);
+            }
+
+            try {
+                this.radiation = new Radiation.ConfigImpl(section.getConfigurationSection("radiation"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse radiation section.", e);
+            }
+        }
+
+        @Override
+        public BaseConfig.BarConfig lugolsIodineDisplay() {
+            return this.lugolsIodineDisplay;
+        }
+
+        @Override
+        public LugolsIodinePotion.Config lugolsIodinePotion() {
+            return this.lugolsIodinePotion;
+        }
+
+        @Override
+        public Radiation.Config radiation() {
+            return this.radiation;
+        }
     }
 }
