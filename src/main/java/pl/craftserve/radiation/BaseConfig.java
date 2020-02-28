@@ -109,9 +109,9 @@ public final class BaseConfig {
             return this.flags;
         }
 
-        public BossBar create(Server server) {
+        public BossBar create(Server server, ChatColor color) {
             Objects.requireNonNull(server, "server");
-            String title = Objects.toString(this.title(), "");
+            String title = Objects.toString(Objects.toString(color, "") + this.title(), "");
             return server.createBossBar(title, this.color(), this.style(), this.flags());
         }
     }

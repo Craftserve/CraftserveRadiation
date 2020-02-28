@@ -71,7 +71,7 @@ public class Radiation implements Listener {
 
     public void enable() {
         Server server = this.plugin.getServer();
-        this.bossBar = this.config.bar().create(server);
+        this.bossBar = this.config.bar().create(server, ChatColor.DARK_RED);
 
         this.task = new Task();
         this.task.runTaskTimer(this.plugin, 20L, 20L);

@@ -16,6 +16,7 @@
 
 package pl.craftserve.radiation;
 
+import org.bukkit.ChatColor;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -95,7 +96,7 @@ public class LugolsIodineDisplay implements Listener {
     }
 
     private BossBar createBossBar() {
-        return this.config.create(this.plugin.getServer());
+        return this.config.create(this.plugin.getServer(), ChatColor.GREEN);
     }
 
     class Task extends BukkitRunnable {

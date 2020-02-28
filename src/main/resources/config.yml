@@ -4,7 +4,7 @@ file-protocol-version-dont-touch: 0
 # Boss bar shown on the screen when player has lugol's iodine effect.
 lugols-iodine-bar:
   # Colorable title shown on the bar.
-  title: '&aDziałanie Płynu Lugola'
+  title: 'Działanie Płynu Lugola'
   # Color of the bar, possible values:
   # blue, green, pink, purple, red, white, yellow
   color: green
@@ -31,7 +31,7 @@ radiation:
   # Boss bar shown on the screen when a player is in the zone.
   bar:
     # Colorable title shown on the bar.
-    title: '&4☢ Strefa radiacji ☢'
+    title: '☢ Strefa radiacji ☢'
     # Color of the bar, possible values:
     # blue, green, pink, purple, red, white, yellow
     color: red
