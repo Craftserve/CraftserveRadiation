@@ -25,6 +25,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
@@ -42,6 +43,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class RadiationPlugin extends JavaPlugin {
+    private static final char COLOR_CODE = '&';
+
+    public static String colorize(String input) {
+        return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
+    }
+
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
 
     private final List<Radiation> radiations = new ArrayList<>();

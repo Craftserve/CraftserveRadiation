@@ -292,7 +292,7 @@ public class Radiation implements Listener {
             }
 
             this.effects = effects;
-            this.escapeMessage = BaseConfig.colorize(section.getString("escape-message", ChatColor.RED + "{0}" + ChatColor.RED + " uciekł/a do strefy radioaktywnej."));
+            this.escapeMessage = RadiationPlugin.colorize(section.getString("escape-message", ChatColor.RED + "{0}" + ChatColor.RED + " uciekł/a do strefy radioaktywnej."));
         }
 
         public BaseConfig.BarConfig bar() {

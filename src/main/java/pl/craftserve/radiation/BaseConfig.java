@@ -31,12 +31,6 @@ import java.util.List;
 import java.util.Objects;
 
 public final class BaseConfig {
-    private static final char COLOR_CODE = '&';
-
-    public static String colorize(String input) {
-        return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
-    }
-
     private BaseConfig() {
     }
 
@@ -58,7 +52,7 @@ public final class BaseConfig {
                 section = new MemoryConfiguration();
             }
 
-            this.title = colorize(section.getString("title"));
+            this.title = RadiationPlugin.colorize(section.getString("title"));
 
             String color = section.getString("color", BarColor.WHITE.name());
             if (color == null) {
