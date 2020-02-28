@@ -240,11 +240,11 @@ public class Radiation implements Listener {
     //
 
     public static class Config {
-        private final BaseConfig.BarConfig bar;
+        private final BarConfig bar;
         private final Iterable<PotionEffect> effects;
         private final String escapeMessage;
 
-        public Config(BaseConfig.BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+        public Config(BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
             this.bar = Objects.requireNonNull(bar, "bar");
             this.effects = Objects.requireNonNull(effects, "effects");
             this.escapeMessage = Objects.requireNonNull(escapeMessage, "escapeMessage");
@@ -256,7 +256,7 @@ public class Radiation implements Listener {
             }
 
             try {
-                this.bar = new BaseConfig.BarConfig(section.getConfigurationSection("bar"));
+                this.bar = new BarConfig(section.getConfigurationSection("bar"));
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse bar section in radiation.", e);
             }
@@ -295,7 +295,7 @@ public class Radiation implements Listener {
             this.escapeMessage = RadiationPlugin.colorize(section.getString("escape-message", ChatColor.RED + "{0}" + ChatColor.RED + " uciekł/a do strefy radioaktywnej."));
         }
 
-        public BaseConfig.BarConfig bar() {
+        public BarConfig bar() {
             return this.bar;
         }
 

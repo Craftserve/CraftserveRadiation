@@ -36,11 +36,11 @@ public class LugolsIodineDisplay implements Listener {
     private final Map<UUID, BossBar> displayMap = new HashMap<>(128);
     private final Plugin plugin;
     private final LugolsIodineEffect effect;
-    private final BaseConfig.BarConfig config;
+    private final BarConfig config;
 
     private Task task;
 
-    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effect, BaseConfig.BarConfig config) {
+    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effect, BarConfig config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.effect = Objects.requireNonNull(effect, "effect");
         this.config = Objects.requireNonNull(config, "config");

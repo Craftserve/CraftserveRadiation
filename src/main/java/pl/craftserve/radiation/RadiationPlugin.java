@@ -275,11 +275,11 @@ public final class RadiationPlugin extends JavaPlugin {
     //
 
     public static class Config {
-        private final BaseConfig.BarConfig lugolsIodineDisplay;
+        private final BarConfig lugolsIodineDisplay;
         private final LugolsIodinePotion.Config lugolsIodinePotion;
         private final Radiation.Config radiation;
 
-        public Config(BaseConfig.BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Radiation.Config radiation) {
+        public Config(BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Radiation.Config radiation) {
             this.lugolsIodineDisplay = Objects.requireNonNull(lugolsIodineDisplay, "lugolsIodineDisplay");
             this.lugolsIodinePotion = Objects.requireNonNull(lugolsIodinePotion, "lugolsIodinePotion");
             this.radiation = Objects.requireNonNull(radiation, "radiation");
@@ -291,7 +291,7 @@ public final class RadiationPlugin extends JavaPlugin {
             }
 
             try {
-                this.lugolsIodineDisplay = new BaseConfig.BarConfig(section.getConfigurationSection("lugols-iodine-bar"));
+                this.lugolsIodineDisplay = new BarConfig(section.getConfigurationSection("lugols-iodine-bar"));
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse lugols-iodine-bar section.", e);
             }
@@ -309,7 +309,7 @@ public final class RadiationPlugin extends JavaPlugin {
             }
         }
 
-        public BaseConfig.BarConfig lugolsIodineDisplay() {
+        public BarConfig lugolsIodineDisplay() {
             return this.lugolsIodineDisplay;
         }
 
