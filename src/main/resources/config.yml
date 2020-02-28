@@ -21,8 +21,8 @@ lugols-iodine-potion:
   name: 'Płyn Lugola'
   # Description of the item.
   description: 'Odporność na promieniowanie ({0})'
-  # Duration in minutes of effect given when a player consumes the potion.
-  duration: 10
+  # Duration in seconds of effect given when a player consumes the potion.
+  duration: 600
   # Colorable broadcast message shown when a player consumes the potion.
   drink-message: '&c{0}&c wypił/a {1}.'
 

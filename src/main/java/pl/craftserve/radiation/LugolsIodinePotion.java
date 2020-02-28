@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 
@@ -60,6 +61,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private NamespacedKey potionKey;
     private NamespacedKey durationKey;
+    private NamespacedKey durationSecondsKey;
 
     public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -72,6 +74,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         this.potionKey = new NamespacedKey(this.plugin, "lugols_iodine");
         this.durationKey = new NamespacedKey(this.plugin, "duration");
+        this.durationSecondsKey = new NamespacedKey(this.plugin, "duration_seconds");
 
         nmsBridge.registerLugolsIodinePotion(this.potionKey);
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
@@ -113,17 +116,20 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         }
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        int duration = container.getOrDefault(this.durationKey, PersistentDataType.INTEGER, 0);
 
-        if (duration <= 0) {
+        int durationSeconds = 0;
+        if (container.has(this.durationSecondsKey, PersistentDataType.INTEGER)) {
+            durationSeconds = container.getOrDefault(this.durationSecondsKey, PersistentDataType.INTEGER, 0);
+        } else if (container.has(this.durationKey, PersistentDataType.INTEGER)) {
+            durationSeconds = (int) TimeUnit.MINUTES.toSeconds(container.getOrDefault(this.durationKey, PersistentDataType.INTEGER, 0)); // legacy
+        }
+
+        if (durationSeconds <= 0) {
             return;
         }
 
         Player player = event.getPlayer();
-
-        int durationSeconds = duration * 60;
         this.effect.setEffect(player, durationSeconds);
-
         this.broadcastConsumption(player);
     }
 
@@ -190,14 +196,26 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private void convert(PotionMeta potionMeta) {
         Objects.requireNonNull(potionMeta, "potionMeta");
-        int durationMinutes = (int) this.config.duration().toMinutes();
+
+        Duration duration = this.config.duration();
+        String formattedDuration = this.formatDuration(this.config.duration());
 
         potionMeta.setDisplayName(ChatColor.AQUA + this.config.name());
-        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + MessageFormat.format(this.config.description(), durationMinutes + ":00)")));
+        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + MessageFormat.format(this.config.description(), formattedDuration)));
 
         PersistentDataContainer container = potionMeta.getPersistentDataContainer();
         container.set(this.potionKey, PersistentDataType.BYTE, TRUE);
-        container.set(this.durationKey, PersistentDataType.INTEGER, durationMinutes);
+        container.set(this.durationSecondsKey, PersistentDataType.INTEGER, (int) duration.getSeconds());
+    }
+
+    private String formatDuration(Duration duration) {
+        Objects.requireNonNull(duration, "duration");
+
+        long seconds = duration.getSeconds();
+        long minutes = TimeUnit.SECONDS.toMinutes(seconds);
+        long secondsLeft = seconds - (TimeUnit.MINUTES.toSeconds(minutes));
+
+        return (minutes < 10 ? "0" : "") +  minutes + ":" + (secondsLeft < 10 ? "0" : "") + secondsLeft;
     }
 
     /**
@@ -270,7 +288,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
             this.name = section.getString("name", "Płyn Lugola");
             this.description = section.getString("description", "Odporność na promieniowanie ({0})");
-            this.duration = Duration.ofMinutes(section.getInt("duration", 10));
+            this.duration = Duration.ofSeconds(section.getInt("duration", 600));
             this.drinkMessage = RadiationPlugin.colorize(section.getString("drink-message", ChatColor.RED + "{0}" + ChatColor.RED + " wypił/a {1}."));
 
             if (this.duration.isZero() || this.duration.isNegative()) {
