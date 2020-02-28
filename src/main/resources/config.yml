@@ -4,7 +4,7 @@ file-protocol-version-dont-touch: 0
 # Boss bar shown on the screen when player has lugol's iodine effect.
 lugols-iodine-bar:
   # Colorable title shown on the bar.
-  title: 'Działanie Płynu Lugola'
+  title: 'Lugol''s Iodine Effect'
   # Color of the bar, possible values:
   # blue, green, pink, purple, red, white, yellow
   color: green
@@ -18,20 +18,20 @@ lugols-iodine-bar:
 # Lugol's iodine potion item options.
 lugols-iodine-potion:
   # Name of the item.
-  name: 'Płyn Lugola'
+  name: 'Lugol''s Iodine'
   # Description of the item.
-  description: 'Odporność na promieniowanie ({0})'
+  description: 'Radiation resistance ({0})'
   # Duration in seconds of effect given when a player consumes the potion.
   duration: 600
   # Colorable broadcast message shown when a player consumes the potion.
-  drink-message: '&c{0}&c wypił/a {1}.'
+  drink-message: '{0}&c drank {1}.'
 
 # Radiation zone options.
 radiation:
   # Boss bar shown on the screen when a player is in the zone.
   bar:
     # Colorable title shown on the bar.
-    title: '☢ Strefa radiacji ☢'
+    title: '☢ Radiation Zone ☢'
     # Color of the bar, possible values:
     # blue, green, pink, purple, red, white, yellow
     color: red
@@ -64,4 +64,4 @@ radiation:
       # Does this effect give an icon?
       has-icon: false
   # Colorable broadcast message shown when a player enters radiation zone.
-  escape-message: '&c{0}&c uciekł/a do strefy radioaktywnej.'
+  escape-message: '{0}&c has escaped to radiation zone.'

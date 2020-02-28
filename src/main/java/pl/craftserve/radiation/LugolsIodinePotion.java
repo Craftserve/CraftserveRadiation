@@ -286,10 +286,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
                 section = new MemoryConfiguration();
             }
 
-            this.name = section.getString("name", "Płyn Lugola");
-            this.description = section.getString("description", "Odporność na promieniowanie ({0})");
+            this.name = section.getString("name", "Lugol's Iodine");
+            this.description = section.getString("description", "Radiation resistance ({0})");
             this.duration = Duration.ofSeconds(section.getInt("duration", 600));
-            this.drinkMessage = RadiationPlugin.colorize(section.getString("drink-message", ChatColor.RED + "{0}" + ChatColor.RED + " wypił/a {1}."));
+            this.drinkMessage = RadiationPlugin.colorize(section.getString("drink-message", "{0}" + ChatColor.RED + " drank {1}."));
 
             if (this.duration.isZero() || this.duration.isNegative()) {
                 throw new InvalidConfigurationException("Given potion duration must be positive.");
