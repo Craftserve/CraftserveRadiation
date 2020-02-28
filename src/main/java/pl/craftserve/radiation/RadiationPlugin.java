@@ -28,6 +28,9 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.MemoryConfiguration;
@@ -37,8 +40,11 @@ import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -197,19 +203,43 @@ public final class RadiationPlugin extends JavaPlugin {
         if (protocol == -1) {
             int potionDuration = section.getInt("potion-duration", -1); // in minutes
             if (potionDuration > 0) {
-                section.set("lugols-iodine-potion.duration", potionDuration);
+                section.set("lugols-iodine-potion.duration", TimeUnit.MINUTES.toSeconds(potionDuration));
             }
+
+            section.set("lugols-iodine-bar.title", "Działanie Płynu Lugola");
+            section.set("lugols-iodine-bar.color", BarColor.GREEN.name());
+            section.set("lugols-iodine-bar.style", BarStyle.SEGMENTED_20.name());
+            section.set("lugols-iodine-bar.flags", Collections.emptyList());
+
+            section.set("lugols-iodine-potion.name", "Płyn Lugola");
+            section.set("lugols-iodine-potion.description", "Odporność na promieniowanie ({0})");
+            section.set("lugols-iodine-potion.drink-message", "{0}" + ChatColor.RED + " wypił/a {1}.");
+
+            section.set("radiation.bar.title", "Strefa radiacji");
+            section.set("radiation.bar.color", BarColor.RED.name());
+            section.set("radiation.bar.style", BarStyle.SOLID.name());
+            section.set("radiation.bar.flags", Collections.singletonList(BarFlag.DARKEN_SKY.name()));
+
+            section.set("radiation.effects.wither.level", 5);
+            section.set("radiation.effects.wither.ambient", false);
+            section.set("radiation.effects.wither.has-particles", false);
+            section.set("radiation.effects.wither.has-icon", false);
+
+            section.set("radiation.effects.hunger.level", 1);
+            section.set("radiation.effects.hunger.ambient", false);
+            section.set("radiation.effects.hunger.has-particles", false);
+            section.set("radiation.effects.hunger.has-icon", false);
+
+            section.set("radiation.escape-message", "{0}" + ChatColor.RED + " uciekł/a do strefy radiacji.");
 
             // Migrate from the old region-ID based system.
             String legacyRegionId = section.getString("region-name");
-
-            boolean[] logged = new boolean[1];
+            AtomicBoolean logged = new AtomicBoolean();
             section.getStringList("world-names").forEach(worldName -> {
-                if (!logged[0]) {
+                if (logged.compareAndSet(false, true)) {
                     this.getLogger().warning(
                             "Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
                             "If everything went fine please completely remove your config.yml file.");
-                    logged[0] = true;
                 }
 
                 this.migrateFromRegionId(worldName, legacyRegionId);
