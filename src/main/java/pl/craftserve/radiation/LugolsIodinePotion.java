@@ -193,7 +193,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         int durationMinutes = (int) this.config.duration().toMinutes();
 
         potionMeta.setDisplayName(ChatColor.AQUA + this.config.name());
-        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + "Odporność na promieniowanie (" + durationMinutes + ":00)"));
+        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + MessageFormat.format(this.config.description(), durationMinutes + ":00)")));
 
         PersistentDataContainer container = potionMeta.getPersistentDataContainer();
         container.set(this.potionKey, PersistentDataType.BYTE, TRUE);
@@ -252,11 +252,13 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     public static class Config {
         private final String name;
+        private final String description;
         private final Duration duration;
         private final String drinkMessage;
 
-        public Config(String name, Duration duration, String drinkMessage) {
+        public Config(String name, String description, Duration duration, String drinkMessage) {
             this.name = Objects.requireNonNull(name, "name");
+            this.description = Objects.requireNonNull(description, "description");
             this.duration = Objects.requireNonNull(duration, "duration");
             this.drinkMessage = Objects.requireNonNull(drinkMessage, "drinkMessage");
         }
@@ -267,6 +269,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
 
             this.name = section.getString("name", "Płyn Lugola");
+            this.description = section.getString("description", "Odporność na promieniowanie ({0})");
             this.duration = Duration.ofMinutes(section.getInt("duration", 10));
             this.drinkMessage = BaseConfig.colorize(section.getString("drink-message", ChatColor.RED + "{0}" + ChatColor.RED + " wypił/a {1}."));
 
@@ -277,6 +280,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         public String name() {
             return this.name;
+        }
+
+        public String description() {
+            return this.description;
         }
 
         public Duration duration() {
