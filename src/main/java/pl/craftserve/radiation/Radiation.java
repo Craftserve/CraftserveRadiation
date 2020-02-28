@@ -239,29 +239,27 @@ public class Radiation implements Listener {
     // Config
     //
 
-    public interface Config {
-        BaseConfig.BarConfig bar();
-        Iterable<PotionEffect> effects();
-        String escapeMessage();
-    }
-
-    public static class ConfigImpl extends BaseConfig implements Config {
+    public static class Config {
         private final BaseConfig.BarConfig bar;
         private final Iterable<PotionEffect> effects;
         private final String escapeMessage;
 
-        public ConfigImpl(ConfigurationSection section) throws InvalidConfigurationException {
+        public Config(BaseConfig.BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+            this.bar = Objects.requireNonNull(bar, "bar");
+            this.effects = Objects.requireNonNull(effects, "effects");
+            this.escapeMessage = Objects.requireNonNull(escapeMessage, "escapeMessage");
+        }
+
+        public Config(ConfigurationSection section) throws InvalidConfigurationException {
             if (section == null) {
                 section = new MemoryConfiguration();
             }
 
             try {
-                this.bar = new BaseConfig.BarConfigImpl(section.getConfigurationSection("bar"));
+                this.bar = new BaseConfig.BarConfig(section.getConfigurationSection("bar"));
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse bar section in radiation.", e);
             }
-
-            this.escapeMessage = this.colorize(section.getString("escape-message", ChatColor.RED + "{0}" + ChatColor.RED + " uciekł/a do strefy radioaktywnej."));
 
             List<PotionEffect> effects = new ArrayList<>();
             ConfigurationSection effectsSection = section.getConfigurationSection("effects");
@@ -294,19 +292,17 @@ public class Radiation implements Listener {
             }
 
             this.effects = effects;
+            this.escapeMessage = BaseConfig.colorize(section.getString("escape-message", ChatColor.RED + "{0}" + ChatColor.RED + " uciekł/a do strefy radioaktywnej."));
         }
 
-        @Override
         public BaseConfig.BarConfig bar() {
             return this.bar;
         }
 
-        @Override
         public Iterable<PotionEffect> effects() {
             return this.effects;
         }
 
-        @Override
         public String escapeMessage() {
             return this.escapeMessage;
         }

@@ -102,7 +102,7 @@ public final class RadiationPlugin extends JavaPlugin {
         this.migrate(config, config.getInt("file-protocol-version-dont-touch", -1));
 
         try {
-            this.config = new ConfigImpl(config);
+            this.config = new Config(config);
         } catch (InvalidConfigurationException e) {
             logger.log(Level.SEVERE, "Could not load configuration file.", e);
             this.setEnabled(false);
@@ -267,52 +267,49 @@ public final class RadiationPlugin extends JavaPlugin {
     // Config
     //
 
-    public interface Config {
-        BaseConfig.BarConfig lugolsIodineDisplay();
-        LugolsIodinePotion.Config lugolsIodinePotion();
-        Radiation.Config radiation();
-    }
-
-    public static class ConfigImpl extends BaseConfig implements Config {
+    public static class Config {
         private final BaseConfig.BarConfig lugolsIodineDisplay;
         private final LugolsIodinePotion.Config lugolsIodinePotion;
         private final Radiation.Config radiation;
 
-        public ConfigImpl(ConfigurationSection section) throws InvalidConfigurationException {
+        public Config(BaseConfig.BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Radiation.Config radiation) {
+            this.lugolsIodineDisplay = Objects.requireNonNull(lugolsIodineDisplay, "lugolsIodineDisplay");
+            this.lugolsIodinePotion = Objects.requireNonNull(lugolsIodinePotion, "lugolsIodinePotion");
+            this.radiation = Objects.requireNonNull(radiation, "radiation");
+        }
+
+        public Config(ConfigurationSection section) throws InvalidConfigurationException {
             if (section == null) {
                 section = new MemoryConfiguration();
             }
 
             try {
-                this.lugolsIodineDisplay = new BaseConfig.BarConfigImpl(section.getConfigurationSection("lugols-iodine-bar"));
+                this.lugolsIodineDisplay = new BaseConfig.BarConfig(section.getConfigurationSection("lugols-iodine-bar"));
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse lugols-iodine-bar section.", e);
             }
 
             try {
-                this.lugolsIodinePotion = new LugolsIodinePotion.ConfigImpl(section.getConfigurationSection("lugols-iodine-potion"));
+                this.lugolsIodinePotion = new LugolsIodinePotion.Config(section.getConfigurationSection("lugols-iodine-potion"));
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse lugols-iodine-potion section.", e);
             }
 
             try {
-                this.radiation = new Radiation.ConfigImpl(section.getConfigurationSection("radiation"));
+                this.radiation = new Radiation.Config(section.getConfigurationSection("radiation"));
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse radiation section.", e);
             }
         }
 
-        @Override
         public BaseConfig.BarConfig lugolsIodineDisplay() {
             return this.lugolsIodineDisplay;
         }
 
-        @Override
         public LugolsIodinePotion.Config lugolsIodinePotion() {
             return this.lugolsIodinePotion;
         }
 
-        @Override
         public Radiation.Config radiation() {
             return this.radiation;
         }

@@ -250,42 +250,39 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     // Config
     //
 
-    public interface Config {
-        String name();
-        Duration duration();
-        String drinkMessage();
-    }
-
-    public static class ConfigImpl extends BaseConfig implements Config {
+    public static class Config {
         private final String name;
         private final Duration duration;
         private final String drinkMessage;
 
-        public ConfigImpl(ConfigurationSection section) throws InvalidConfigurationException {
+        public Config(String name, Duration duration, String drinkMessage) {
+            this.name = Objects.requireNonNull(name, "name");
+            this.duration = Objects.requireNonNull(duration, "duration");
+            this.drinkMessage = Objects.requireNonNull(drinkMessage, "drinkMessage");
+        }
+
+        public Config(ConfigurationSection section) throws InvalidConfigurationException {
             if (section == null) {
                 section = new MemoryConfiguration();
             }
 
             this.name = section.getString("name", "Płyn Lugola");
             this.duration = Duration.ofMinutes(section.getInt("duration", 10));
-            this.drinkMessage = this.colorize(section.getString("drink-message", ChatColor.RED + "{0}" + ChatColor.RED + " wypił/a {1}."));
+            this.drinkMessage = BaseConfig.colorize(section.getString("drink-message", ChatColor.RED + "{0}" + ChatColor.RED + " wypił/a {1}."));
 
             if (this.duration.isZero() || this.duration.isNegative()) {
                 throw new InvalidConfigurationException("Given potion duration must be positive.");
             }
         }
 
-        @Override
         public String name() {
             return this.name;
         }
 
-        @Override
         public Duration duration() {
             return this.duration;
         }
 
-        @Override
         public String drinkMessage() {
             return this.drinkMessage;
         }

@@ -30,38 +30,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class BaseConfig {
+public final class BaseConfig {
     private static final char COLOR_CODE = '&';
 
-    protected String colorize(String input) {
+    public static String colorize(String input) {
         return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
     }
 
-    public interface BarConfig {
-        String title();
-        BarColor color();
-        BarStyle style();
-        BarFlag[] flags();
-
-        default BossBar create(Server server) {
-            Objects.requireNonNull(server, "server");
-            String title = Objects.toString(this.title(), "");
-            return server.createBossBar(title, this.color(), this.style(), this.flags());
-        }
+    private BaseConfig() {
     }
 
-    public static class BarConfigImpl extends BaseConfig implements BarConfig {
+    public static class BarConfig {
         private final String title;
         private final BarColor color;
         private final BarStyle style;
         private final BarFlag[] flags;
 
-        public BarConfigImpl(ConfigurationSection section) throws InvalidConfigurationException {
+        public BarConfig(String title, BarColor color, BarStyle style, BarFlag[] flags) {
+            this.title = Objects.requireNonNull(title, "title");
+            this.color = Objects.requireNonNull(color, "color");
+            this.style = Objects.requireNonNull(style, "style");
+            this.flags = Objects.requireNonNull(flags, "flags");
+        }
+
+        public BarConfig(ConfigurationSection section) throws InvalidConfigurationException {
             if (section == null) {
                 section = new MemoryConfiguration();
             }
 
-            this.title = this.colorize(section.getString("title"));
+            this.title = colorize(section.getString("title"));
 
             String color = section.getString("color", BarColor.WHITE.name());
             if (color == null) {
@@ -96,24 +93,26 @@ public class BaseConfig {
             this.flags = flags.toArray(new BarFlag[0]);
         }
 
-        @Override
         public String title() {
             return this.title;
         }
 
-        @Override
         public BarColor color() {
             return this.color;
         }
 
-        @Override
         public BarStyle style() {
             return this.style;
         }
 
-        @Override
         public BarFlag[] flags() {
             return this.flags;
+        }
+
+        public BossBar create(Server server) {
+            Objects.requireNonNull(server, "server");
+            String title = Objects.toString(this.title(), "");
+            return server.createBossBar(title, this.color(), this.style(), this.flags());
         }
     }
 }
