@@ -61,5 +61,5 @@ radiation:
       has-particles: false
       # Does this effect give an icon?
       has-icon: false
-  # Colorable broadcast message shown when a player consumes the potion.
+  # Colorable broadcast message shown when a player enters radiation zone.
   escape-message: '&c{0}&c uciekł/a do strefy radioaktywnej.'
