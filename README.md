@@ -5,19 +5,6 @@ Plugin działa na wersji [Minecraft 1.14 (Java Edition)](https://minecraft.net) 
 
 Autorem pluginu jest [TheMolkaPL](https://github.com/TheMolkaPL).
 
-Konfiguracja
----
-
-```yaml
-# Czas trwania mikstury `Płyn Lugola` w minutach
-potion-duration: 10
-# Nazwa regionu WorldGuard wolny od radiacji, nie wymagający użycia mikstury
-region-name: km_safe_from_radiation
-# Lista nazwy światów w których działa plugin
-world-names:
-- world
-```
-
 Pierwsze uruchomienie
 ---
 
