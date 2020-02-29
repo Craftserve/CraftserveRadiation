@@ -51,7 +51,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 
 public class Radiation implements Listener {
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
@@ -116,6 +115,7 @@ public class Radiation implements Listener {
 
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
+        this.plugin.getLogger().info(player.getName() + " has escaped to radiation zone at " + player.getLocation());
 
         String rawMessage = this.config.escapeMessage();
         if (rawMessage == null) {
@@ -123,8 +123,6 @@ public class Radiation implements Listener {
         }
 
         String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);
-        this.plugin.getLogger().log(Level.INFO, message);
-
         for (Player online : this.plugin.getServer().getOnlinePlayers()) {
             if (online.canSee(player)) {
                 online.sendMessage(message);

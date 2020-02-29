@@ -47,7 +47,6 @@ import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 
 public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     private static final Material INGREDIENT = Material.GHAST_TEAR;
@@ -130,11 +129,12 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         Player player = event.getPlayer();
         this.effect.setEffect(player, durationSeconds);
-        this.broadcastConsumption(player);
+        this.broadcastConsumption(player, durationSeconds);
     }
 
-    private void broadcastConsumption(Player player) {
+    private void broadcastConsumption(Player player, int durationSeconds) {
         Objects.requireNonNull(player, "player");
+        this.plugin.getLogger().info(player.getName() + " has consumed " + this.config.name() + " with a duration of " + durationSeconds + " seconds");
 
         String rawMessage = this.config.drinkMessage();
         if (rawMessage == null) {
@@ -142,8 +142,6 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         }
 
         String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, this.config.name());
-        this.plugin.getLogger().log(Level.INFO, message);
-
         for (Player online : this.plugin.getServer().getOnlinePlayers()) {
             if (online.canSee(player)) {
                 online.sendMessage(message);
