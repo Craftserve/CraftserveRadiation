@@ -201,11 +201,6 @@ public final class RadiationPlugin extends JavaPlugin {
         Objects.requireNonNull(section, "section");
 
         if (protocol == -1) {
-            int potionDuration = section.getInt("potion-duration", -1); // in minutes
-            if (potionDuration > 0) {
-                section.set("lugols-iodine-potion.duration", TimeUnit.MINUTES.toSeconds(potionDuration));
-            }
-
             section.set("lugols-iodine-bar.title", "Działanie Płynu Lugola");
             section.set("lugols-iodine-bar.color", BarColor.GREEN.name());
             section.set("lugols-iodine-bar.style", BarStyle.SEGMENTED_20.name());
@@ -213,6 +208,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
             section.set("lugols-iodine-potion.name", "Płyn Lugola");
             section.set("lugols-iodine-potion.description", "Odporność na promieniowanie ({0})");
+            section.set("lugols-iodine-potion.duration", TimeUnit.MINUTES.toSeconds(section.getInt("potion-duration", 10)));
             section.set("lugols-iodine-potion.drink-message", "{0}" + ChatColor.RED + " wypił/a {1}.");
 
             section.set("radiation.bar.title", "Strefa radiacji");
