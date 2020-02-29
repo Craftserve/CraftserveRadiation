@@ -44,6 +44,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -136,17 +137,14 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         Objects.requireNonNull(player, "player");
         this.plugin.getLogger().info(player.getName() + " has consumed " + this.config.name() + " with a duration of " + durationSeconds + " seconds");
 
-        String rawMessage = this.config.drinkMessage();
-        if (rawMessage == null) {
-            return;
-        }
-
-        String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, this.config.name());
-        for (Player online : this.plugin.getServer().getOnlinePlayers()) {
-            if (online.canSee(player)) {
-                online.sendMessage(message);
+        this.config.drinkMessage().ifPresent(rawMessage -> {
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, this.config.name());
+            for (Player online : this.plugin.getServer().getOnlinePlayers()) {
+                if (online.canSee(player)) {
+                    online.sendMessage(message);
+                }
             }
-        }
+        });
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -287,7 +285,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             this.name = section.getString("name", "Lugol's Iodine");
             this.description = section.getString("description", "Radiation resistance ({0})");
             this.duration = Duration.ofSeconds(section.getInt("duration", 600));
-            this.drinkMessage = RadiationPlugin.colorize(section.getString("drink-message", "{0}" + ChatColor.RED + " drank {1}."));
+
+            String drinkMessage = RadiationPlugin.colorize(section.getString("drink-message"));
+            this.drinkMessage = drinkMessage != null && !drinkMessage.isEmpty() ? drinkMessage : null;
 
             if (this.duration.isZero() || this.duration.isNegative()) {
                 throw new InvalidConfigurationException("Given potion duration must be positive.");
@@ -306,8 +306,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return this.duration;
         }
 
-        public String drinkMessage() {
-            return this.drinkMessage;
+        public Optional<String> drinkMessage() {
+            return Optional.ofNullable(this.drinkMessage);
         }
     }
 }

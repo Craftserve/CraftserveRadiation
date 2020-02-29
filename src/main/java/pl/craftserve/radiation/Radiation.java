@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -117,17 +118,14 @@ public class Radiation implements Listener {
         Objects.requireNonNull(player, "player");
         this.plugin.getLogger().info(player.getName() + " has escaped to radiation zone at " + player.getLocation());
 
-        String rawMessage = this.config.escapeMessage();
-        if (rawMessage == null) {
-            return;
-        }
-
-        String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);
-        for (Player online : this.plugin.getServer().getOnlinePlayers()) {
-            if (online.canSee(player)) {
-                online.sendMessage(message);
+        this.config.escapeMessage().ifPresent(rawMessage -> {
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);
+            for (Player online : this.plugin.getServer().getOnlinePlayers()) {
+                if (online.canSee(player)) {
+                    online.sendMessage(message);
+                }
             }
-        }
+        });
     }
 
     public Set<UUID> getAffectedPlayers() {
@@ -290,7 +288,9 @@ public class Radiation implements Listener {
             }
 
             this.effects = effects;
-            this.escapeMessage = RadiationPlugin.colorize(section.getString("escape-message", "{0}" + ChatColor.RED + " has escaped to radiation zone."));
+
+            String escapeMessage = RadiationPlugin.colorize(section.getString("escape-message"));
+            this.escapeMessage = escapeMessage != null && !escapeMessage.isEmpty() ? escapeMessage : null;
         }
 
         public BarConfig bar() {
@@ -301,8 +301,8 @@ public class Radiation implements Listener {
             return this.effects;
         }
 
-        public String escapeMessage() {
-            return this.escapeMessage;
+        public Optional<String> escapeMessage() {
+            return Optional.ofNullable(this.escapeMessage);
         }
     }
 }
