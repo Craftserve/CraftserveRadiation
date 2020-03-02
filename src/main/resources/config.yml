@@ -31,7 +31,7 @@ radiation:
   # Boss bar shown on the screen when a player is in the zone.
   bar:
     # Colorable title shown on the bar.
-    title: '☢ Radiation Zone ☢'
+    title: 'Radiation Zone'
     # Color of the bar, possible values:
     # blue, green, pink, purple, red, white, yellow
     color: red
