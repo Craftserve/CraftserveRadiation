@@ -1,7 +1,7 @@
 name: '${project.name}'
 version: '${project.version}'
 authors: ${authors}
-website: 'https://craftserve.pl'
+website: '${project.url}'
 main: pl.craftserve.radiation.RadiationPlugin
 api-version: '${apiVersion}'
 description: Makes world radioactive
