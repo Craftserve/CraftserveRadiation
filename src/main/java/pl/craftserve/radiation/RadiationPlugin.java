@@ -55,6 +55,7 @@ public final class RadiationPlugin extends JavaPlugin {
         return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
     }
 
+    private static final int CURRENT_PROTOCOL_VERSION = 0;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
 
     private final List<Radiation> radiations = new ArrayList<>();
@@ -112,7 +113,10 @@ public final class RadiationPlugin extends JavaPlugin {
         //
 
         FileConfiguration config = this.getConfig();
-        this.migrate(config, config.getInt("file-protocol-version-dont-touch", -1));
+        if (!this.migrate(config, config.getInt("file-protocol-version-dont-touch", -1))) {
+            this.setEnabled(false);
+            return;
+        }
 
         try {
             this.config = new Config(config);
@@ -197,10 +201,17 @@ public final class RadiationPlugin extends JavaPlugin {
     // Migrations
     //
 
-    private void migrate(ConfigurationSection section, int protocol) {
+    private boolean migrate(ConfigurationSection section, int protocol) {
         Objects.requireNonNull(section, "section");
+        Logger logger = this.getLogger();
 
-        if (protocol == -1) {
+        if (protocol > CURRENT_PROTOCOL_VERSION) {
+            logger.severe("Your configuration file's protocol version \"" + protocol +
+                    "\" is invalid. Are you trying to load it using a newer version of the plugin?");
+            return false;
+        }
+
+        if (protocol < 0) {
             section.set("lugols-iodine-bar.title", "Działanie Płynu Lugola");
             section.set("lugols-iodine-bar.color", BarColor.GREEN.name());
             section.set("lugols-iodine-bar.style", BarStyle.SEGMENTED_20.name());
@@ -229,11 +240,11 @@ public final class RadiationPlugin extends JavaPlugin {
             section.set("radiation.escape-message", "{0}" + ChatColor.RED + " uciekł/a do strefy radiacji.");
 
             // Migrate from the old region-ID based system.
-            String legacyRegionId = section.getString("region-name");
+            String legacyRegionId = section.getString("region-name", "km_safe_from_radiation");
             AtomicBoolean logged = new AtomicBoolean();
             section.getStringList("world-names").forEach(worldName -> {
                 if (logged.compareAndSet(false, true)) {
-                    this.getLogger().warning(
+                    logger.warning(
                             "Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
                             "If everything went fine please completely remove your config.yml file.");
                 }
@@ -241,6 +252,8 @@ public final class RadiationPlugin extends JavaPlugin {
                 this.migrateFromRegionId(worldName, legacyRegionId);
             });
         }
+
+        return true;
     }
 
     /**
