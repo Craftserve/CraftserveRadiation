@@ -25,26 +25,44 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class RadiationPlugin extends JavaPlugin {
+    private static final char COLOR_CODE = '&';
+
+    public static String colorize(String input) {
+        return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
+    }
+
+    private static final int CURRENT_PROTOCOL_VERSION = 0;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
 
     private final List<Radiation> radiations = new ArrayList<>();
 
     private RadiationNmsBridge radiationNmsBridge;
     private Flag<Boolean> radiationFlag;
+    private Config config;
 
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
@@ -59,9 +77,8 @@ public final class RadiationPlugin extends JavaPlugin {
 
         switch (serverVersion) {
             case "v1_14_R1":
-                return new V1_14ToV1_15NmsBridge(this, "v1_14_R1");
             case "v1_15_R1":
-                return new V1_14ToV1_15NmsBridge(this, "v1_15_R1");
+                return new V1_14ToV1_15NmsBridge(this, serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
@@ -91,43 +108,33 @@ public final class RadiationPlugin extends JavaPlugin {
             return;
         }
 
-        this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag)));
-
         //
-        // Loading configuration
+        // Configuration
         //
 
         FileConfiguration config = this.getConfig();
-
-        int potionDuration = config.getInt("potion-duration", 10); // in minutes
-        if (potionDuration <= 0) {
-            logger.log(Level.SEVERE, "\"potion-duration\" option must be positive.");
+        if (!this.migrate(config, config.getInt("file-protocol-version-dont-touch", -1))) {
             this.setEnabled(false);
             return;
         }
 
-        // Migrate from the old region-ID based system.
-        String legacyRegionId = config.getString("region-name");
-        if (legacyRegionId != null) {
-            boolean[] logged = new boolean[1];
-            config.getStringList("world-names").forEach(worldName -> {
-                if (!logged[0]) {
-                    logger.warning("Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
-                            "If everything went fine please completely remove \"region-name\" and \"world-names\" options from your config.yml file.");
-                    logged[0] = true;
-                }
-
-                this.migrateFromRegionId(worldName, legacyRegionId);
-            });
+        try {
+            this.config = new Config(config);
+        } catch (InvalidConfigurationException e) {
+            logger.log(Level.SEVERE, "Could not load configuration file.", e);
+            this.setEnabled(false);
+            return;
         }
 
         //
         // Enabling
         //
 
+        this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation()));
+
         this.effect = new LugolsIodineEffect(this);
-        this.potion = new LugolsIodinePotion(this, this.effect, "Płyn Lugola", potionDuration);
-        this.display = new LugolsIodineDisplay(this, this.effect);
+        this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
+        this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
 
         this.radiations.forEach(Radiation::enable);
 
@@ -138,7 +145,7 @@ public final class RadiationPlugin extends JavaPlugin {
         this.craftserveListener = new CraftserveListener(this);
         this.craftserveListener.enable();
 
-        this.metricsHandler = new MetricsHandler(this, server, this.getLogger(), this.effect, this.potion);
+        this.metricsHandler = new MetricsHandler(this, server, logger, this.effect, this.potion);
         this.metricsHandler.start();
     }
 
@@ -172,6 +179,10 @@ public final class RadiationPlugin extends JavaPlugin {
         return this.radiationFlag;
     }
 
+    public Config getPluginConfig() {
+        return this.config;
+    }
+
     @SuppressWarnings("unchecked")
     private Flag<Boolean> getOrCreateRadiationFlag(FlagRegistry flagRegistry) {
         Objects.requireNonNull(flagRegistry, "flagRegistry");
@@ -184,6 +195,65 @@ public final class RadiationPlugin extends JavaPlugin {
         flag = RADIATION_FLAG;
         flagRegistry.register(flag);
         return flag;
+    }
+
+    //
+    // Migrations
+    //
+
+    private boolean migrate(ConfigurationSection section, int protocol) {
+        Objects.requireNonNull(section, "section");
+        Logger logger = this.getLogger();
+
+        if (protocol > CURRENT_PROTOCOL_VERSION) {
+            logger.severe("Your configuration file's protocol version \"" + protocol +
+                    "\" is invalid. Are you trying to load it using a newer version of the plugin?");
+            return false;
+        }
+
+        if (protocol < 0) {
+            section.set("lugols-iodine-bar.title", "Działanie Płynu Lugola");
+            section.set("lugols-iodine-bar.color", BarColor.GREEN.name());
+            section.set("lugols-iodine-bar.style", BarStyle.SEGMENTED_20.name());
+            section.set("lugols-iodine-bar.flags", Collections.emptyList());
+
+            section.set("lugols-iodine-potion.name", "Płyn Lugola");
+            section.set("lugols-iodine-potion.description", "Odporność na promieniowanie ({0})");
+            section.set("lugols-iodine-potion.duration", TimeUnit.MINUTES.toSeconds(section.getInt("potion-duration", 10)));
+            section.set("lugols-iodine-potion.drink-message", "{0}" + ChatColor.RED + " wypił/a {1}.");
+
+            section.set("radiation.bar.title", "Strefa radiacji");
+            section.set("radiation.bar.color", BarColor.RED.name());
+            section.set("radiation.bar.style", BarStyle.SOLID.name());
+            section.set("radiation.bar.flags", Collections.singletonList(BarFlag.DARKEN_SKY.name()));
+
+            section.set("radiation.effects.wither.level", 5);
+            section.set("radiation.effects.wither.ambient", false);
+            section.set("radiation.effects.wither.has-particles", false);
+            section.set("radiation.effects.wither.has-icon", false);
+
+            section.set("radiation.effects.hunger.level", 1);
+            section.set("radiation.effects.hunger.ambient", false);
+            section.set("radiation.effects.hunger.has-particles", false);
+            section.set("radiation.effects.hunger.has-icon", false);
+
+            section.set("radiation.escape-message", "{0}" + ChatColor.RED + " uciekł/a do strefy radiacji.");
+
+            // Migrate from the old region-ID based system.
+            String legacyRegionId = section.getString("region-name", "km_safe_from_radiation");
+            AtomicBoolean logged = new AtomicBoolean();
+            section.getStringList("world-names").forEach(worldName -> {
+                if (logged.compareAndSet(false, true)) {
+                    logger.warning(
+                            "Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
+                            "If everything went fine please completely remove your config.yml file.");
+                }
+
+                this.migrateFromRegionId(worldName, legacyRegionId);
+            });
+        }
+
+        return true;
     }
 
     /**
@@ -237,5 +307,57 @@ public final class RadiationPlugin extends JavaPlugin {
         global.setFlag(this.radiationFlag, true);
         this.getLogger().info("Region " + regionId + " in world " + worldName +
                 " has been successfully migrated to the new flag-based system.");
+    }
+
+    //
+    // Config
+    //
+
+    public static class Config {
+        private final BarConfig lugolsIodineDisplay;
+        private final LugolsIodinePotion.Config lugolsIodinePotion;
+        private final Radiation.Config radiation;
+
+        public Config(BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Radiation.Config radiation) {
+            this.lugolsIodineDisplay = Objects.requireNonNull(lugolsIodineDisplay, "lugolsIodineDisplay");
+            this.lugolsIodinePotion = Objects.requireNonNull(lugolsIodinePotion, "lugolsIodinePotion");
+            this.radiation = Objects.requireNonNull(radiation, "radiation");
+        }
+
+        public Config(ConfigurationSection section) throws InvalidConfigurationException {
+            if (section == null) {
+                section = new MemoryConfiguration();
+            }
+
+            try {
+                this.lugolsIodineDisplay = new BarConfig(section.getConfigurationSection("lugols-iodine-bar"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse lugols-iodine-bar section.", e);
+            }
+
+            try {
+                this.lugolsIodinePotion = new LugolsIodinePotion.Config(section.getConfigurationSection("lugols-iodine-potion"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse lugols-iodine-potion section.", e);
+            }
+
+            try {
+                this.radiation = new Radiation.Config(section.getConfigurationSection("radiation"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse radiation section.", e);
+            }
+        }
+
+        public BarConfig lugolsIodineDisplay() {
+            return this.lugolsIodineDisplay;
+        }
+
+        public LugolsIodinePotion.Config lugolsIodinePotion() {
+            return this.lugolsIodinePotion;
+        }
+
+        public Radiation.Config radiation() {
+            return this.radiation;
+        }
     }
 }

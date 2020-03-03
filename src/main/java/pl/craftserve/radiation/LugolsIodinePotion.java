@@ -19,6 +19,9 @@ package pl.craftserve.radiation;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -36,35 +39,34 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionType;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 
 public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
-
     private static final Material INGREDIENT = Material.GHAST_TEAR;
+    private static final PotionType BASE_POTION = PotionType.THICK;
 
     private static final byte TRUE = 1;
 
-    private static final int BREW_SLOTS = 3;
-
     private final Plugin plugin;
     private final LugolsIodineEffect effect;
-    private final String name;
-    private final int duration; // in minutes
+    private final Config config;
 
     private NamespacedKey potionKey;
     private NamespacedKey durationKey;
+    private NamespacedKey durationSecondsKey;
 
-    public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, String name, int duration) {
+    public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.effect = Objects.requireNonNull(effect, "effect");
-        this.name = Objects.requireNonNull(name, "name");
-        this.duration = duration;
+        this.config = Objects.requireNonNull(config, "config");
     }
 
     public void enable(RadiationNmsBridge nmsBridge) {
@@ -72,20 +74,21 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         this.potionKey = new NamespacedKey(this.plugin, "lugols_iodine");
         this.durationKey = new NamespacedKey(this.plugin, "duration");
+        this.durationSecondsKey = new NamespacedKey(this.plugin, "duration_seconds");
 
         nmsBridge.registerLugolsIodinePotion(this.potionKey);
-
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
 
     public void disable(RadiationNmsBridge nmsBridge) {
-        nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
+        Objects.requireNonNull(nmsBridge, "nmsBridge");
 
         HandlerList.unregisterAll(this);
+        nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
     }
 
     public Duration getDuration() {
-        return Duration.ofMinutes(this.duration);
+        return this.config.duration();
     }
 
     @Override
@@ -113,31 +116,35 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         }
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        int duration = container.getOrDefault(this.durationKey, PersistentDataType.INTEGER, 0);
 
-        if (duration <= 0) {
+        int durationSeconds = 0;
+        if (container.has(this.durationSecondsKey, PersistentDataType.INTEGER)) {
+            durationSeconds = container.getOrDefault(this.durationSecondsKey, PersistentDataType.INTEGER, 0);
+        } else if (container.has(this.durationKey, PersistentDataType.INTEGER)) {
+            durationSeconds = (int) TimeUnit.MINUTES.toSeconds(container.getOrDefault(this.durationKey, PersistentDataType.INTEGER, 0)); // legacy
+        }
+
+        if (durationSeconds <= 0) {
             return;
         }
 
         Player player = event.getPlayer();
-
-        int durationSeconds = duration * 60;
         this.effect.setEffect(player, durationSeconds);
-
-        this.broadcastConsumption(player);
+        this.broadcastConsumption(player, durationSeconds);
     }
 
-    private void broadcastConsumption(Player player) {
+    private void broadcastConsumption(Player player, int durationSeconds) {
         Objects.requireNonNull(player, "player");
+        this.plugin.getLogger().info(player.getName() + " has consumed " + this.config.name() + " with a duration of " + durationSeconds + " seconds");
 
-        String message = ChatColor.RED + player.getDisplayName() + ChatColor.RESET + ChatColor.RED + " wypił/a " + this.name + ".";
-        this.plugin.getLogger().log(Level.INFO, message);
-
-        for (Player online : this.plugin.getServer().getOnlinePlayers()) {
-            if (online.canSee(player)) {
-                online.sendMessage(message);
+        this.config.drinkMessage().ifPresent(rawMessage -> {
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, this.config.name());
+            for (Player online : this.plugin.getServer().getOnlinePlayers()) {
+                if (online.canSee(player)) {
+                    online.sendMessage(message);
+                }
             }
-        }
+        });
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -149,9 +156,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return;
         }
 
-        boolean[] modified = new boolean[BREW_SLOTS];
+        boolean[] modified = new boolean[BrewingStandWindow.SLOTS];
 
-        for (int i = 0; i < BREW_SLOTS; i++) {
+        for (int i = 0; i < BrewingStandWindow.SLOTS; i++) {
             ItemStack result = window.results[i];
             if (result == null) {
                 continue; // nothing in this slot
@@ -163,7 +170,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
 
             PotionMeta potionMeta = (PotionMeta) itemMeta;
-            if (potionMeta.getBasePotionData().getType().equals(PotionType.THICK)) {
+            if (potionMeta.getBasePotionData().getType().equals(BASE_POTION)) {
                 this.convert(potionMeta);
                 result.setItemMeta(potionMeta);
 
@@ -173,7 +180,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         // delay this, because nms changes item stacks after BrewEvent is called
         this.plugin.getServer().getScheduler().runTask(this.plugin, () -> {
-            for (int i = 0; i < BREW_SLOTS; i++) {
+            for (int i = 0; i < BrewingStandWindow.SLOTS; i++) {
                 if (modified[i]) {
                     ItemStack[] contents = inventory.getContents();
                     contents[i] = window.getResult(i);
@@ -186,12 +193,25 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     private void convert(PotionMeta potionMeta) {
         Objects.requireNonNull(potionMeta, "potionMeta");
 
-        potionMeta.setDisplayName(ChatColor.AQUA + this.name);
-        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + "Odporność na promieniowanie (" + this.duration + ":00)"));
+        Duration duration = this.config.duration();
+        String formattedDuration = this.formatDuration(this.config.duration());
+
+        potionMeta.setDisplayName(ChatColor.AQUA + this.config.name());
+        potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + MessageFormat.format(this.config.description(), formattedDuration)));
 
         PersistentDataContainer container = potionMeta.getPersistentDataContainer();
         container.set(this.potionKey, PersistentDataType.BYTE, TRUE);
-        container.set(this.durationKey, PersistentDataType.INTEGER, this.duration);
+        container.set(this.durationSecondsKey, PersistentDataType.INTEGER, (int) duration.getSeconds());
+    }
+
+    private String formatDuration(Duration duration) {
+        Objects.requireNonNull(duration, "duration");
+
+        long seconds = duration.getSeconds();
+        long minutes = TimeUnit.SECONDS.toMinutes(seconds);
+        long secondsLeft = seconds - (TimeUnit.MINUTES.toSeconds(minutes));
+
+        return (minutes < 10 ? "0" : "") +  minutes + ":" + (secondsLeft < 10 ? "0" : "") + secondsLeft;
     }
 
     /**
@@ -199,6 +219,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
      * {@link BrewerInventory}
      */
     static class BrewingStandWindow {
+        static final int SLOTS = 3;
+
         final ItemStack ingredient;
         final ItemStack fuel;
         final ItemStack[] results;
@@ -235,6 +257,57 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         public ItemStack getResult(int index) {
             return this.results[index];
+        }
+    }
+
+    //
+    // Config
+    //
+
+    public static class Config {
+        private final String name;
+        private final String description;
+        private final Duration duration;
+        private final String drinkMessage;
+
+        public Config(String name, String description, Duration duration, String drinkMessage) {
+            this.name = Objects.requireNonNull(name, "name");
+            this.description = Objects.requireNonNull(description, "description");
+            this.duration = Objects.requireNonNull(duration, "duration");
+            this.drinkMessage = Objects.requireNonNull(drinkMessage, "drinkMessage");
+        }
+
+        public Config(ConfigurationSection section) throws InvalidConfigurationException {
+            if (section == null) {
+                section = new MemoryConfiguration();
+            }
+
+            this.name = section.getString("name", "Lugol's Iodine");
+            this.description = section.getString("description", "Radiation resistance ({0})");
+            this.duration = Duration.ofSeconds(section.getInt("duration", 600));
+
+            String drinkMessage = RadiationPlugin.colorize(section.getString("drink-message"));
+            this.drinkMessage = drinkMessage != null && !drinkMessage.isEmpty() ? drinkMessage : null;
+
+            if (this.duration.isZero() || this.duration.isNegative()) {
+                throw new InvalidConfigurationException("Given potion duration must be positive.");
+            }
+        }
+
+        public String name() {
+            return this.name;
+        }
+
+        public String description() {
+            return this.description;
+        }
+
+        public Duration duration() {
+            return this.duration;
+        }
+
+        public Optional<String> drinkMessage() {
+            return Optional.ofNullable(this.drinkMessage);
         }
     }
 }

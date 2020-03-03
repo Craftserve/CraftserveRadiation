@@ -27,10 +27,10 @@ import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarFlag;
-import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -42,59 +42,36 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 
 public class Radiation implements Listener {
-    static final PotionEffect[] EFFECTS = new PotionEffect[] {
-            createWitherEffect(),
-            createHungerEffect()
-    };
-
-    private static PotionEffect createWitherEffect() {
-        return new PotionEffect(
-                PotionEffectType.WITHER, // type
-                20 * 5, // duration, ticks
-                4, // amplifier, Wither V
-                false, // ambient
-                false, // particles
-                false // icon
-        );
-    }
-
-    private static PotionEffect createHungerEffect() {
-        return new PotionEffect(
-                PotionEffectType.HUNGER, // type
-                20 * 5, // duration, ticks
-                0, // amplifier, Hunger I
-                false, // ambient
-                false, // particles
-                false // icon
-        );
-    }
-
-    private static final String TITLE = ChatColor.DARK_RED + "Strefa radiacji";
-
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
     private final Plugin plugin;
     private final Matcher matcher;
+    private final Config config;
 
     private BossBar bossBar;
     private Task task;
 
-    public Radiation(Plugin plugin, Matcher matcher) {
+    public Radiation(Plugin plugin, Matcher matcher, Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.matcher = Objects.requireNonNull(matcher, "matcher");
+        this.config = Objects.requireNonNull(config, "config");
     }
 
     public void enable() {
         Server server = this.plugin.getServer();
-        this.bossBar = server.createBossBar(TITLE, BarColor.RED, BarStyle.SOLID, BarFlag.DARKEN_SKY);
+        this.bossBar = this.config.bar().create(server, ChatColor.DARK_RED);
 
         this.task = new Task();
         this.task.runTaskTimer(this.plugin, 20L, 20L);
@@ -139,15 +116,16 @@ public class Radiation implements Listener {
 
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
+        this.plugin.getLogger().info(player.getName() + " has escaped to radiation zone at " + player.getLocation());
 
-        String message = ChatColor.RED + player.getDisplayName() + ChatColor.RESET + ChatColor.RED + " uciekł/a do strefy radioaktywnej.";
-        this.plugin.getLogger().log(Level.INFO, message);
-
-        for (Player online : this.plugin.getServer().getOnlinePlayers()) {
-            if (online.canSee(player)) {
-                online.sendMessage(message);
+        this.config.escapeMessage().ifPresent(rawMessage -> {
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);
+            for (Player online : this.plugin.getServer().getOnlinePlayers()) {
+                if (online.canSee(player)) {
+                    online.sendMessage(message);
+                }
             }
-        }
+        });
     }
 
     public Set<UUID> getAffectedPlayers() {
@@ -205,10 +183,7 @@ public class Radiation implements Listener {
 
         private void hurt(Player player) {
             Objects.requireNonNull(player, "player");
-
-            for (PotionEffect effect : EFFECTS) {
-                player.addPotionEffect(effect, true);
-            }
+            config.effects().forEach(effect -> player.addPotionEffect(effect, true));
         }
     }
 
@@ -253,6 +228,81 @@ public class Radiation implements Listener {
 
             Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
             return value != null && value;
+        }
+    }
+
+    //
+    // Config
+    //
+
+    public static class Config {
+        private final BarConfig bar;
+        private final Iterable<PotionEffect> effects;
+        private final String escapeMessage;
+
+        public Config(BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+            this.bar = Objects.requireNonNull(bar, "bar");
+            this.effects = Objects.requireNonNull(effects, "effects");
+            this.escapeMessage = Objects.requireNonNull(escapeMessage, "escapeMessage");
+        }
+
+        public Config(ConfigurationSection section) throws InvalidConfigurationException {
+            if (section == null) {
+                section = new MemoryConfiguration();
+            }
+
+            try {
+                this.bar = new BarConfig(section.getConfigurationSection("bar"));
+            } catch (InvalidConfigurationException e) {
+                throw new InvalidConfigurationException("Could not parse bar section in radiation.", e);
+            }
+
+            List<PotionEffect> effects = new ArrayList<>();
+            ConfigurationSection effectsSection = section.getConfigurationSection("effects");
+            if (effectsSection != null) {
+                for (String key : effectsSection.getKeys(false)) {
+                    if (!effectsSection.isConfigurationSection(key)) {
+                        continue;
+                    }
+
+                    ConfigurationSection effectSection = effectsSection.getConfigurationSection(key);
+                    if (effectSection == null) {
+                        continue;
+                    }
+
+                    PotionEffectType type = PotionEffectType.getByName(effectSection.getName());
+                    if (type == null) {
+                        throw new InvalidConfigurationException("Unknown effect type: " + key + ".");
+                    }
+
+                    effectSection.set("effect", type.getId());
+                    effectSection.set("duration", 20 * 5); // duration, in ticks
+                    effectSection.set("amplifier", effectsSection.getInt("level", 1) - 1);
+
+                    try {
+                        effects.add(new PotionEffect(effectSection.getValues(false)));
+                    } catch (NoSuchElementException e) {
+                        throw new InvalidConfigurationException("Could not parse effect " + key + ".", e);
+                    }
+                }
+            }
+
+            this.effects = effects;
+
+            String escapeMessage = RadiationPlugin.colorize(section.getString("escape-message"));
+            this.escapeMessage = escapeMessage != null && !escapeMessage.isEmpty() ? escapeMessage : null;
+        }
+
+        public BarConfig bar() {
+            return this.bar;
+        }
+
+        public Iterable<PotionEffect> effects() {
+            return this.effects;
+        }
+
+        public Optional<String> escapeMessage() {
+            return Optional.ofNullable(this.escapeMessage);
         }
     }
 }
