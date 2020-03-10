@@ -35,7 +35,7 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             Class<?> potionClass = this.getNmsClass("Potions", version);
             Class<?> itemsClass = this.getNmsClass("Items", version);
 
-            this.basePotion = potionClass.getDeclaredField("THICK").get(null);
+            this.basePotion = potionClass.getDeclaredField(this.getBasePotionConstantName()).get(null);
             this.lugolsIodinePotionIngredient = itemsClass.getDeclaredField("GHAST_TEAR").get(null);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize 1.14-1.15 bridge", e);
@@ -44,6 +44,10 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
 
     private Class<?> getNmsClass(String clazz, String version) throws ClassNotFoundException {
         return Class.forName(MessageFormat.format("net.minecraft.server.{1}.{0}", clazz, version));
+    }
+
+    private String getBasePotionConstantName() {
+        return this.plugin.getServer().getUnsafe().getDataVersion() >= 1963 ? "THICK" : "d";
     }
 
     @Override
