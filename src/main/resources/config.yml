@@ -65,3 +65,8 @@ radiation:
       has-icon: false
   # Colorable broadcast message shown when a player enters radiation zone.
   escape-message: '{0}&c has escaped to radiation zone.'
+
+# Usataw wartosc na true, jezeli chcesz, aby strefa wolna od radiacji byla tworzona automatycznie od punktu spawnu
+use-radius: true
+# Promien, w którym od punktu spawnu powinna obowiązywać strefa wolna od radiacji
+radius: 250
