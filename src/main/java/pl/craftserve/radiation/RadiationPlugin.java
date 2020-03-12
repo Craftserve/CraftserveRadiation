@@ -17,17 +17,12 @@
 package pl.craftserve.radiation;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
-import com.sk89q.worldguard.commands.task.RegionAdder;
-import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.flags.StateFlag;
-import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
@@ -135,49 +130,10 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
+        SafeFromRadiationHandler safeFromRadiationHandler = new SafeFromRadiationHandler(this.radiationFlag);
+        safeFromRadiationHandler.register(this.getCommand("safefromradiation"));
+
         this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation()));
-
-        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        if (config.getBoolean("use-radius", true)) {
-            int radius = config.getInt("radius", 250);
-
-            String regionName = "safe_from_radiation";
-            World world = server.getWorlds().get(0);
-
-            BlockVector3 origin = BukkitAdapter.asBlockVector(world.getSpawnLocation());
-            BlockVector3 size = BlockVector3.ONE.multiply(radius);
-            BlockVector3 minPoint = origin.subtract(size).withY(0);
-            BlockVector3 maxPoint = origin.add(size).withY(255);
-
-            RegionManager worldRegionManager = regionContainer.get(BukkitAdapter.adapt(world));
-
-            ProtectedCuboidRegion region = new ProtectedCuboidRegion(regionName, minPoint, maxPoint);
-            RegionAdder regionAdder = null;
-
-            if (worldRegionManager.hasRegion(regionName)) {
-                ProtectedRegion existing = worldRegionManager.getRegion(regionName);
-
-                if (!existing.getMinimumPoint().equals(minPoint) || !existing.getMaximumPoint().equals(maxPoint)) {
-                    region.copyFrom(existing);
-                    regionAdder = new RegionAdder(worldRegionManager, region);
-                    this.getLogger().log(Level.INFO, "The currently existing region covers a different area than in the configuration, it will be redefined.");
-                }
-
-            } else {
-                region.setFlag(Flags.PASSTHROUGH, StateFlag.State.ALLOW);
-                regionAdder = new RegionAdder(worldRegionManager, region);
-            }
-
-            if (regionAdder != null) {
-                try {
-                    regionAdder.call();
-                } catch (Exception e) {
-                    this.getLogger().log(Level.SEVERE, "Error occured when tried to create region with name " + regionName, e);
-                }
-            }
-
-            this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation()));
-        }
 
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
