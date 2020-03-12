@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
-    private static final String REGION_ID = "region_id";
+    private static final String REGION_ID = "safe_from_radiation";
     private static final String GLOBAL_REGION_ID = "__global__";
 
     private final Flag<Boolean> flag;
