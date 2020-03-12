@@ -17,6 +17,7 @@
 package pl.craftserve.radiation;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.protection.flags.Flag;
@@ -84,11 +85,16 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        this.define((Player) sender, container, REGION_ID, radius);
+        Player player = (Player) sender;
+        if (this.define(player, container, REGION_ID, radius)) {
+            BlockVector2 origin = BukkitAdapter.asBlockVector(player.getLocation()).toBlockVector2();
+            sender.sendMessage(ChatColor.GREEN + "A new safe-from-radiation zone has been created in radius of " +
+                    radius + " at the origin of " + origin + " in world " + player.getWorld().getName() + ".");
+        }
         return true;
     }
 
-    private void define(Player player, RegionContainer container, String regionId, int radius) {
+    private boolean define(Player player, RegionContainer container, String regionId, int radius) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(container, "container");
         Objects.requireNonNull(regionId, "regionId");
@@ -97,7 +103,7 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
         RegionManager regionManager = container.get(world);
         if (regionManager == null) {
             player.sendMessage(ChatColor.RED + "Sorry, region manager for world " + world.getName() + " is not currently accessible.");
-            return;
+            return false;
         }
 
         BlockVector3 origin = BukkitAdapter.asBlockVector(player.getLocation());
@@ -106,6 +112,7 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
 
         this.define(regionManager, new ProtectedCuboidRegion(regionId, min, max));
         this.flagGlobal(regionManager, true);
+        return true;
     }
 
     private void define(RegionManager regionManager, ProtectedRegion region) {
