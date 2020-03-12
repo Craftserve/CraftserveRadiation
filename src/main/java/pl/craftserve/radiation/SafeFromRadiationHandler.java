@@ -88,8 +88,8 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
         Player player = (Player) sender;
         if (this.define(player, container, REGION_ID, radius)) {
             BlockVector2 origin = BukkitAdapter.asBlockVector(player.getLocation()).toBlockVector2();
-            sender.sendMessage(ChatColor.GREEN + "A new safe-from-radiation zone has been created in radius of " +
-                    radius + " at the origin of " + origin + " in world " + player.getWorld().getName() + ".");
+            sender.sendMessage(ChatColor.GREEN + "A new safe-from-radiation zone has been created in radius " +
+                    radius + " at the origin at " + origin + " in world " + player.getWorld().getName() + ".");
         }
         return true;
     }
