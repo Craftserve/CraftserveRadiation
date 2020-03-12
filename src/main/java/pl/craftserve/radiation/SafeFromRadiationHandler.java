@@ -105,7 +105,7 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
         BlockVector3 max = origin.add(radius, 0, radius).withY(255);
 
         this.define(regionManager, new ProtectedCuboidRegion(regionId, min, max));
-        this.markGlobal(regionManager, true);
+        this.flagGlobal(regionManager, true);
     }
 
     private void define(RegionManager regionManager, ProtectedRegion region) {
@@ -118,24 +118,24 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
             region.copyFrom(existing);
         }
 
-        this.mark(region, false);
+        this.flag(region, false);
         regionManager.addRegion(region);
     }
 
-    private void markGlobal(RegionManager regionManager, boolean flagValue) {
+    private void flagGlobal(RegionManager regionManager, boolean flagValue) {
         Objects.requireNonNull(regionManager, "regionMark");
 
         if (regionManager.hasRegion(GLOBAL_REGION_ID)) {
             ProtectedRegion existing = Objects.requireNonNull(regionManager.getRegion(GLOBAL_REGION_ID));
-            this.mark(existing, flagValue);
+            this.flag(existing, flagValue);
         } else {
             ProtectedRegion region = new GlobalProtectedRegion(GLOBAL_REGION_ID);
-            this.mark(region, flagValue);
+            this.flag(region, flagValue);
             regionManager.addRegion(region);
         }
     }
 
-    private void mark(ProtectedRegion region, boolean flagValue) {
+    private void flag(ProtectedRegion region, boolean flagValue) {
         Objects.requireNonNull(region, "region");
 
         if (!Objects.equals(region.getFlag(this.flag), flagValue)) {
