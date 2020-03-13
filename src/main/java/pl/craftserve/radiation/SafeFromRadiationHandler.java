@@ -21,6 +21,8 @@ import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
@@ -126,6 +128,7 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
         }
 
         this.flag(region, false);
+        region.setFlag(Flags.PASSTHROUGH, StateFlag.State.ALLOW);
         regionManager.addRegion(region);
     }
 
