@@ -132,24 +132,24 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
         regionManager.addRegion(region);
     }
 
-    private void flagGlobal(RegionManager regionManager, boolean flagValue) {
+    private void flagGlobal(RegionManager regionManager, boolean value) {
         Objects.requireNonNull(regionManager, "regionMark");
 
         if (regionManager.hasRegion(GLOBAL_REGION_ID)) {
             ProtectedRegion existing = Objects.requireNonNull(regionManager.getRegion(GLOBAL_REGION_ID));
-            this.flag(existing, flagValue);
+            this.flag(existing, value);
         } else {
             ProtectedRegion region = new GlobalProtectedRegion(GLOBAL_REGION_ID);
-            this.flag(region, flagValue);
+            this.flag(region, value);
             regionManager.addRegion(region);
         }
     }
 
-    private void flag(ProtectedRegion region, boolean flagValue) {
+    private void flag(ProtectedRegion region, boolean value) {
         Objects.requireNonNull(region, "region");
 
-        if (!Objects.equals(region.getFlag(this.flag), flagValue)) {
-            region.setFlag(this.flag, flagValue);
+        if (!Objects.equals(region.getFlag(this.flag), value)) {
+            region.setFlag(this.flag, value);
             region.setDirty(true);
         }
     }
