@@ -109,12 +109,18 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
         }
 
         BlockVector3 origin = BukkitAdapter.asBlockVector(player.getLocation());
-        BlockVector3 min = origin.subtract(radius, 0, radius).withY(0);
-        BlockVector3 max = origin.add(radius, 0, radius).withY(255);
-
-        this.define(regionManager, new ProtectedCuboidRegion(regionId, min, max));
+        this.define(regionManager, this.createCuboid(regionId, origin, radius));
         this.flagGlobal(regionManager, true);
         return true;
+    }
+
+    private ProtectedCuboidRegion createCuboid(String regionId, BlockVector3 origin, int radius) {
+        Objects.requireNonNull(regionId, "regionId");
+        Objects.requireNonNull(origin, "origin");
+
+        BlockVector3 min = origin.subtract(radius, 0, radius).withY(0);
+        BlockVector3 max = origin.add(radius, 0, radius).withY(255);
+        return new ProtectedCuboidRegion(regionId, min, max);
     }
 
     private void define(RegionManager regionManager, ProtectedRegion region) {
