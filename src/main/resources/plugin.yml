@@ -7,7 +7,23 @@ api-version: '${apiVersion}'
 description: Makes world radioactive
 depend: ['WorldGuard']
 
+commands:
+  safefromradiation:
+    description: 'Set the safe-from-radiation zone.'
+    aliases: ['bezradiacji', 'radiationfree']
+    permission: 'craftserveradiation.safefromradiation'
+    usage: '/safefromradiation <radius>'
+
 permissions:
+  craftserveradiation.*:
+    description: 'Gives all possible permissions.'
+    default: false
+    children:
+    - 'craftserveradiation.ad'
+    - 'craftserveradiation.safefromradiation'
   craftserveradiation.ad:
     description: 'Gives access to print Craftserve advertisement.'
+    default: op
+  craftserveradiation.safefromradiation:
+    description: 'Gives access to the "/safefromradiation" command.'
     default: op
