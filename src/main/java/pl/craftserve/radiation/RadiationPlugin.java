@@ -130,24 +130,20 @@ public final class RadiationPlugin extends JavaPlugin {
         SafeFromRadiationHandler safeFromRadiationHandler = new SafeFromRadiationHandler(this.radiationFlag);
         safeFromRadiationHandler.register(this.getCommand("safefromradiation"));
 
-        this.radiations.add(new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation()));
-
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
         this.radiation = new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation());
 
-        this.radiations.forEach(Radiation::enable);
+        this.craftserveListener = new CraftserveListener(this);
+        this.metricsHandler = new MetricsHandler(this, server, logger, this.effect, this.potion);
 
         this.effect.enable();
         this.potion.enable(this.radiationNmsBridge);
         this.display.enable();
         this.radiation.enable();
 
-        this.craftserveListener = new CraftserveListener(this);
         this.craftserveListener.enable();
-
-        this.metricsHandler = new MetricsHandler(this, server, logger, this.effect, this.potion);
         this.metricsHandler.start();
     }
 
