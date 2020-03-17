@@ -39,9 +39,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,8 +56,6 @@ public final class RadiationPlugin extends JavaPlugin {
     private static final int CURRENT_PROTOCOL_VERSION = 0;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
 
-    private final List<Radiation> radiations = new ArrayList<>();
-
     private RadiationNmsBridge radiationNmsBridge;
     private Flag<Boolean> radiationFlag;
     private Config config;
@@ -67,6 +63,7 @@ public final class RadiationPlugin extends JavaPlugin {
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
+    private Radiation radiation;
 
     private CraftserveListener craftserveListener;
     private MetricsHandler metricsHandler;
@@ -138,12 +135,14 @@ public final class RadiationPlugin extends JavaPlugin {
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
+        this.radiation = new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation());
 
         this.radiations.forEach(Radiation::enable);
 
         this.effect.enable();
         this.potion.enable(this.radiationNmsBridge);
         this.display.enable();
+        this.radiation.enable();
 
         this.craftserveListener = new CraftserveListener(this);
         this.craftserveListener.enable();
@@ -157,25 +156,22 @@ public final class RadiationPlugin extends JavaPlugin {
         if (this.metricsHandler != null) {
             this.metricsHandler.stop();
         }
-
         if (this.craftserveListener != null) {
             this.craftserveListener.disable();
         }
 
+        if (this.radiation != null) {
+            this.radiation.disable();
+        }
         if (this.display != null) {
             this.display.disable();
         }
-
         if (this.potion != null) {
             this.potion.disable(this.radiationNmsBridge);
         }
-
         if (this.effect != null) {
             this.effect.disable();
         }
-
-        this.radiations.forEach(Radiation::disable);
-        this.radiations.clear();
     }
 
     public Flag<Boolean> getRadiationFlag() {
