@@ -224,6 +224,7 @@ public class Radiation implements Listener {
         @Override
         public boolean test(Player player, RegionContainer regionContainer) {
             Location location = BukkitAdapter.adapt(player.getLocation());
+            location = location.setY(Math.max(0, Math.min(255, location.getY())));
             ApplicableRegionSet regions = regionContainer.createQuery().getApplicableRegions(location);
 
             Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
