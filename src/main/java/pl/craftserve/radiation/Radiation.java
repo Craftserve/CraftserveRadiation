@@ -278,7 +278,7 @@ public class Radiation implements Listener {
 
                     effectSection.set("effect", type.getId());
                     effectSection.set("duration", 20 * 5); // duration, in ticks
-                    effectSection.set("amplifier", effectsSection.getInt("level", 1) - 1);
+                    effectSection.set("amplifier", effectSection.getInt("level", 1) - 1);
 
                     try {
                         effects.add(new PotionEffect(effectSection.getValues(false)));
