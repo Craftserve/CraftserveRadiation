@@ -29,18 +29,21 @@ import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
+public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private static final String REGION_ID = "safe_from_radiation";
     private static final String GLOBAL_REGION_ID = "__global__";
 
@@ -48,9 +51,11 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
     private final Radiation.WorldGuardMatcher worldGuardMatcher = (player, regionContainer) -> {
         throw new UnsupportedOperationException();
     };
+    private final LugolsIodinePotion potion;
 
-    public SafeFromRadiationHandler(Flag<Boolean> flag) {
+    public RadiationCommandHandler(Flag<Boolean> flag, LugolsIodinePotion potion) {
         this.flag = Objects.requireNonNull(flag, "flag");
+        this.potion = potion;
     }
 
     @Override
@@ -59,40 +64,53 @@ public class SafeFromRadiationHandler implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.RED + "Only players may execute this command.");
             return true;
         }
-
-        if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Provide safe-from-radiation zone radius in the first argument. Radius will be relative to your current position.");
-            sender.sendMessage(ChatColor.RED + command.getUsage());
-            return true;
-        }
-
-        int radius;
-        try {
-            radius = Integer.parseInt(args[0]);
-        } catch (NumberFormatException e) {
-            sender.sendMessage(ChatColor.RED + "Number was expected, but " + args[0] + " was provided.");
-            sender.sendMessage(ChatColor.RED + command.getUsage());
-            return true;
-        }
-
-        if (radius <= 0) {
-            sender.sendMessage(ChatColor.RED + "Radius must be positive.");
-            sender.sendMessage(ChatColor.RED + command.getUsage());
-            return true;
-        }
-
-        RegionContainer container = this.worldGuardMatcher.getRegionContainer();
-        if (container == null) {
-            sender.sendMessage(ChatColor.RED + "Sorry, region container is not currently accessible.");
-            return true;
-        }
-
         Player player = (Player) sender;
-        if (this.define(player, container, REGION_ID, radius)) {
-            BlockVector2 origin = BukkitAdapter.asBlockVector(player.getLocation()).toBlockVector2();
-            player.sendMessage(ChatColor.GREEN + "A new safe-from-radiation zone has been created in radius " +
-                    radius + " at the origin at " + origin + " in world " + player.getWorld().getName() + ".");
+
+        if(args.length > 0) {
+            if (args[0].equals("safe")) {
+                String usage = ChatColor.RED + String.join(" ", args) + " <radius>";
+                if (args.length == 1) {
+                    sender.sendMessage(ChatColor.RED + "Provide safe-from-radiation zone radius in the first argument. Radius will be relative to your current position.");
+                    sender.sendMessage(usage);
+                    return true;
+                }
+
+                int radius;
+                try {
+                    radius = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(ChatColor.RED + "Number was expected, but " + args[1] + " was provided.");
+                    sender.sendMessage(ChatColor.RED + usage);
+                    return true;
+                }
+
+                if (radius <= 0) {
+                    sender.sendMessage(ChatColor.RED + "Radius must be positive.");
+                    sender.sendMessage(ChatColor.RED + usage);
+                    return true;
+                }
+
+                RegionContainer container = this.worldGuardMatcher.getRegionContainer();
+                if (container == null) {
+                    sender.sendMessage(ChatColor.RED + "Sorry, region container is not currently accessible.");
+                    return true;
+                }
+
+                if (this.define(player, container, REGION_ID, radius)) {
+                    BlockVector2 origin = BukkitAdapter.asBlockVector(player.getLocation()).toBlockVector2();
+                    player.sendMessage(ChatColor.GREEN + "A new safe-from-radiation zone has been created in radius " +
+                            radius + " at the origin at " + origin + " in world " + player.getWorld().getName() + ".");
+                }
+                return true;
+            } else if (args[0].equals("potion")) {
+                ItemStack itemStack = new ItemStack(Material.POTION);
+                itemStack.setItemMeta(potion.convert((PotionMeta) itemStack.getItemMeta()));
+                player.getInventory().addItem(itemStack);
+                return true;
+            }
         }
+
+        sender.sendMessage(ChatColor.RED + command.getUsage());
         return true;
     }
 

@@ -75,7 +75,7 @@ public final class RadiationPlugin extends JavaPlugin {
         switch (serverVersion) {
             case "v1_14_R1":
             case "v1_15_R1":
-                return new V1_14ToV1_15NmsBridge(this, serverVersion);
+                return new V1_14ToV1_15NmsBridge(this, serverVersion, this.potion.getConfig());
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
@@ -96,14 +96,6 @@ public final class RadiationPlugin extends JavaPlugin {
         Server server = this.getServer();
         Logger logger = this.getLogger();
         this.saveDefaultConfig();
-
-        try {
-            this.radiationNmsBridge = this.initializeNmsBridge();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to launch CraftserveRadiation. Plausibly your server version is unsupported.", e);
-            this.setEnabled(false);
-            return;
-        }
 
         //
         // Configuration
@@ -127,13 +119,21 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
-        SafeFromRadiationHandler safeFromRadiationHandler = new SafeFromRadiationHandler(this.radiationFlag);
-        safeFromRadiationHandler.register(this.getCommand("safefromradiation"));
-
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
         this.radiation = new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation());
+
+        try {
+            this.radiationNmsBridge = this.initializeNmsBridge();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to launch CraftserveRadiation. Plausibly your server version is unsupported.", e);
+            this.setEnabled(false);
+            return;
+        }
+
+        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);
+        radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);
         this.metricsHandler = new MetricsHandler(this, server, logger, this.effect, this.potion);

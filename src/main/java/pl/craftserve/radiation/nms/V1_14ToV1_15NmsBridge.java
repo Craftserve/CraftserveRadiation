@@ -1,7 +1,9 @@
 package pl.craftserve.radiation.nms;
 
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
+import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -20,10 +22,12 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
 
     private final Object basePotion;
     private final Object lugolsIodinePotionIngredient;
+    private final LugolsIodinePotion.Config config;
 
-    public V1_14ToV1_15NmsBridge(final Plugin plugin, final String version) {
+    public V1_14ToV1_15NmsBridge(final Plugin plugin, final String version, final LugolsIodinePotion.Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         Objects.requireNonNull(version, "version");
+        this.config = Objects.requireNonNull(config, "config");
 
         try {
             this.itemClass = this.getNmsClass("Item", version);
@@ -32,11 +36,17 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             this.potionRegistryClass = this.getNmsClass("PotionRegistry", version);
             this.potionBrewerClass = this.getNmsClass("PotionBrewer", version);
 
-            Class<?> potionClass = this.getNmsClass("Potions", version);
-            Class<?> itemsClass = this.getNmsClass("Items", version);
+            Class<?> craftMagicNumbers = this.getObcClass("util.CraftMagicNumbers", version);
+            Method getItem = craftMagicNumbers.getMethod("getItem", Material.class);
 
-            this.basePotion = potionClass.getDeclaredField(this.getBasePotionConstantName()).get(null);
-            this.lugolsIodinePotionIngredient = itemsClass.getDeclaredField("GHAST_TEAR").get(null);
+            Class<?> iRegistry = this.getNmsClass("IRegistry", version);
+            Class<?> minecraftKey = this.getNmsClass("MinecraftKey", version);
+            Method newMinecraftKey = minecraftKey.getMethod("a", String.class);
+            Object potion = iRegistry.getDeclaredField("POTION").get(null);
+            Method getPotion = potion.getClass().getMethod("get", minecraftKey);
+
+            this.basePotion = getPotion.invoke(potion, newMinecraftKey.invoke(null, config.getRecipe().getBasePotion().name().toLowerCase()));
+            this.lugolsIodinePotionIngredient = getItem.invoke(null, config.getRecipe().getIngredient());
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize 1.14-1.15 bridge", e);
         }
@@ -46,8 +56,8 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
         return Class.forName(MessageFormat.format("net.minecraft.server.{1}.{0}", clazz, version));
     }
 
-    private String getBasePotionConstantName() {
-        return this.plugin.getServer().getUnsafe().getDataVersion() >= 1963 ? "THICK" : "d";
+    private Class<?> getObcClass(String clazz, String version) throws ClassNotFoundException {
+        return Class.forName(MessageFormat.format("org.bukkit.craftbukkit.{1}.{0}", clazz, version));
     }
 
     @Override

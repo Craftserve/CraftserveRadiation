@@ -17,8 +17,18 @@ lugols-iodine-bar:
 
 # Lugol's iodine potion item options.
 lugols-iodine-potion:
+  recipe:
+    # Should brewing recipe be enabled
+    enabled: true
+    # Base potion (https://papermc.io/javadocs/paper/1.15/org/bukkit/potion/PotionType.html)
+    base-potion: 'THICK'
+    # Ingredient (https://papermc.io/javadocs/paper/1.15/org/bukkit/Material.html)
+    ingredient: 'GHAST_TEAR'
+
   # Name of the item.
   name: 'Lugol''s Iodine'
+  # Color of potion (in hex, or null for water color).
+  color: '#197d14'
   # Description of the item.
   description: 'Radiation resistance ({0})'
   # Duration in seconds of effect given when a player consumes the potion.

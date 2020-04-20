@@ -8,11 +8,11 @@ description: Makes world radioactive
 depend: ['WorldGuard']
 
 commands:
-  safefromradiation:
+  radiation:
     description: 'Set the safe-from-radiation zone.'
-    aliases: ['bezradiacji', 'radiationfree']
+    aliases: ['radiacja']
     permission: 'craftserveradiation.safefromradiation'
-    usage: '/safefromradiation <radius>'
+    usage: '/radiation <safe/potion>'
 
 permissions:
   craftserveradiation.*:
@@ -24,6 +24,6 @@ permissions:
   craftserveradiation.ad:
     description: 'Gives access to print Craftserve advertisement.'
     default: op
-  craftserveradiation.safefromradiation:
-    description: 'Gives access to the "/safefromradiation" command.'
+  craftserveradiation.radiation:
+    description: 'Gives access to the "/radiation" command.'
     default: op
