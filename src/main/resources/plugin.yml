@@ -12,7 +12,7 @@ commands:
     description: 'Set the safe-from-radiation zone.'
     aliases: ['radiacja']
     permission: 'craftserveradiation.safefromradiation'
-    usage: '/radiation <safe/potion>'
+    usage: '/radiation <safe|potion>'
 
 permissions:
   craftserveradiation.*:

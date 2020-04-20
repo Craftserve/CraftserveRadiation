@@ -146,8 +146,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBrew(BrewEvent event) {
-        if(!config.recipe.enabled)
+        if (!config.recipe.enabled) {
             return;
+        }
 
         BrewerInventory inventory = event.getContents();
         BrewingStandWindow window = BrewingStandWindow.fromArray(inventory.getContents());
