@@ -75,7 +75,7 @@ public final class RadiationPlugin extends JavaPlugin {
         switch (serverVersion) {
             case "v1_14_R1":
             case "v1_15_R1":
-                return new V1_14ToV1_15NmsBridge(this, serverVersion, this.potion.getConfig());
+                return new V1_14ToV1_15NmsBridge(this, serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }

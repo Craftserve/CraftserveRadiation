@@ -23,7 +23,7 @@ lugols-iodine-potion:
     # Base potion (https://papermc.io/javadocs/paper/1.15/org/bukkit/potion/PotionType.html)
     base-potion: 'THICK'
     # Ingredient (https://papermc.io/javadocs/paper/1.15/org/bukkit/Material.html)
-    ingredient: 'GHAST_TEAR'
+    ingredient: 'ghast_tear'
 
   # Name of the item.
   name: 'Lugol''s Iodine'

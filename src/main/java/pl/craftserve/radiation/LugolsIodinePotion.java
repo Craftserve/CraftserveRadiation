@@ -43,7 +43,11 @@ import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.text.MessageFormat;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -72,7 +76,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         this.durationSecondsKey = new NamespacedKey(this.plugin, "duration_seconds");
 
         if (this.config.getRecipe().enabled) {
-            nmsBridge.registerLugolsIodinePotion(this.potionKey);
+            nmsBridge.registerLugolsIodinePotion(this.potionKey, this.config);
         }
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
@@ -298,11 +302,15 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             this.recipe = new Recipe(section.getConfigurationSection("recipe"));
             this.name = section.getString("name", "Lugol's Iodine");
             String colorHex = section.getString("color", null);
-            this.color = colorHex == null ? null : Color.fromRGB(
-                    Integer.valueOf(colorHex.substring(1, 3), 16),
-                    Integer.valueOf(colorHex.substring(3, 5), 16),
-                    Integer.valueOf(colorHex.substring(5, 7), 16)
-            );
+            try {
+                this.color = colorHex == null ? null : Color.fromRGB(
+                        Integer.parseInt(colorHex.substring(1, 3), 16),
+                        Integer.parseInt(colorHex.substring(3, 5), 16),
+                        Integer.parseInt(colorHex.substring(5, 7), 16)
+                );
+            } catch (NumberFormatException | StringIndexOutOfBoundsException exception) {
+                throw new InvalidConfigurationException("Invalid potion color.", exception);
+            }
             this.description = section.getString("description", "Radiation resistance ({0})");
             this.duration = Duration.ofSeconds(section.getInt("duration", 600));
 
@@ -345,14 +353,27 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
                 this.basePotion = Objects.requireNonNull(basePotion, "basePotion");
             }
 
-            public Recipe(ConfigurationSection section) {
+            public Recipe(ConfigurationSection section) throws InvalidConfigurationException {
                 if (section == null) {
                     section = new MemoryConfiguration();
                 }
 
                 this.enabled = section.getBoolean("enabled", true);
-                this.ingredient = Material.matchMaterial(Objects.requireNonNull(section.getString("ingredient", "GHAST_TEAR")));
-                this.basePotion = PotionType.valueOf(section.getString("base-potion", "THICK"));
+                if (this.enabled) {
+                    this.ingredient = Material.matchMaterial(Objects.requireNonNull(section.getString("ingredient", "ghast_tear")));
+                    if (ingredient == null) {
+                        throw new InvalidConfigurationException("Invalid recipe ingredient name");
+                    }
+
+                    try {
+                        this.basePotion = PotionType.valueOf(Objects.requireNonNull(section.getString("base-potion", "THICK")).toUpperCase());
+                    } catch (IllegalArgumentException exception) {
+                        throw new InvalidConfigurationException("Invalid recipe base potion name", exception);
+                    }
+                } else {
+                    this.ingredient = null;
+                    this.basePotion = null;
+                }
             }
 
             public boolean isEnabled() {
