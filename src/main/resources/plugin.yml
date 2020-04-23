@@ -11,7 +11,7 @@ commands:
   radiation:
     description: 'Set the safe-from-radiation zone.'
     aliases: ['radiacja']
-    permission: 'craftserveradiation.safefromradiation'
+    permission: 'craftserveradiation.radiation'
     usage: '/radiation <safe|potion>'
 
 permissions:
@@ -20,7 +20,7 @@ permissions:
     default: false
     children:
     - 'craftserveradiation.ad'
-    - 'craftserveradiation.safefromradiation'
+    - 'craftserveradiation.radiation'
   craftserveradiation.ad:
     description: 'Gives access to print Craftserve advertisement.'
     default: op

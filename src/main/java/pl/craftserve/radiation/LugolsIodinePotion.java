@@ -85,7 +85,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         Objects.requireNonNull(nmsBridge, "nmsBridge");
 
         HandlerList.unregisterAll(this);
-        nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
+        if (this.config.getRecipe().enabled) {
+            nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
+        }
     }
 
     public Duration getDuration() {

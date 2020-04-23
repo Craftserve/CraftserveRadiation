@@ -27,7 +27,7 @@ lugols-iodine-potion:
 
   # Name of the item.
   name: 'Lugol''s Iodine'
-  # Color of potion (in hex, or null for water color).
+  # Color of potion (in hex (https://htmlcolorcodes.com/), or null for base potion color)
   color: '#197d14'
   # Description of the item.
   description: 'Radiation resistance ({0})'
