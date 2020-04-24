@@ -1,7 +1,9 @@
 package pl.craftserve.radiation.nms;
 
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
+import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -18,8 +20,11 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
     private final Class<?> potionRegistryClass;
     private final Class<?> potionBrewerClass;
 
-    private final Object basePotion;
-    private final Object lugolsIodinePotionIngredient;
+    private final Method getItem;
+    private final Method newMinecraftKey;
+    private final Method getPotion;
+
+    private final Object potionRegistry;
 
     public V1_14ToV1_15NmsBridge(final Plugin plugin, final String version) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -32,11 +37,14 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             this.potionRegistryClass = this.getNmsClass("PotionRegistry", version);
             this.potionBrewerClass = this.getNmsClass("PotionBrewer", version);
 
-            Class<?> potionClass = this.getNmsClass("Potions", version);
-            Class<?> itemsClass = this.getNmsClass("Items", version);
+            Class<?> craftMagicNumbers = this.getObcClass("util.CraftMagicNumbers", version);
+            getItem = craftMagicNumbers.getMethod("getItem", Material.class);
 
-            this.basePotion = potionClass.getDeclaredField(this.getBasePotionConstantName()).get(null);
-            this.lugolsIodinePotionIngredient = itemsClass.getDeclaredField("GHAST_TEAR").get(null);
+            Class<?> iRegistry = this.getNmsClass("IRegistry", version);
+            Class<?> minecraftKey = this.getNmsClass("MinecraftKey", version);
+            this.newMinecraftKey = minecraftKey.getMethod("a", String.class);
+            potionRegistry = iRegistry.getDeclaredField("POTION").get(null);
+            this.getPotion = potionRegistry.getClass().getMethod("get", minecraftKey);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize 1.14-1.15 bridge", e);
         }
@@ -46,13 +54,16 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
         return Class.forName(MessageFormat.format("net.minecraft.server.{1}.{0}", clazz, version));
     }
 
-    private String getBasePotionConstantName() {
-        return this.plugin.getServer().getUnsafe().getDataVersion() >= 1963 ? "THICK" : "d";
+    private Class<?> getObcClass(String clazz, String version) throws ClassNotFoundException {
+        return Class.forName(MessageFormat.format("org.bukkit.craftbukkit.{1}.{0}", clazz, version));
     }
 
     @Override
-    public void registerLugolsIodinePotion(final NamespacedKey potionKey) {
+    public void registerLugolsIodinePotion(final NamespacedKey potionKey, final LugolsIodinePotion.Config config) {
         try {
+            Object basePotion = getPotion.invoke(potionRegistry, newMinecraftKey.invoke(null, config.getRecipe().getBasePotion().name().toLowerCase()));
+            Object ingredient = getItem.invoke(null, config.getRecipe().getIngredient());
+
             Object registryType = this.iRegistryClass.getDeclaredField("POTION").get(null);
             Object mobEffectArray = Array.newInstance(this.mobEffectClass, 0);
             Object newPotion = this.potionRegistryClass.getConstructor(mobEffectArray.getClass()).newInstance(mobEffectArray);
@@ -62,7 +73,7 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
 
             Method registerBrewingRecipe = this.potionBrewerClass.getDeclaredMethod("a", this.potionRegistryClass, this.itemClass, this.potionRegistryClass);
             registerBrewingRecipe.setAccessible(true);
-            registerBrewingRecipe.invoke(null, this.basePotion, this.lugolsIodinePotionIngredient, potion);
+            registerBrewingRecipe.invoke(null, basePotion, ingredient, potion);
         } catch (Exception e) {
             this.plugin.getLogger().log(Level.SEVERE, "Could not handle reflective operation.", e);
         }

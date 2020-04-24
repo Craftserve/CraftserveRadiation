@@ -53,7 +53,7 @@ public final class RadiationPlugin extends JavaPlugin {
         return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
     }
 
-    private static final int CURRENT_PROTOCOL_VERSION = 0;
+    private static final int CURRENT_PROTOCOL_VERSION = 1;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
 
     private RadiationNmsBridge radiationNmsBridge;
@@ -127,13 +127,13 @@ public final class RadiationPlugin extends JavaPlugin {
         // Enabling
         //
 
-        SafeFromRadiationHandler safeFromRadiationHandler = new SafeFromRadiationHandler(this.radiationFlag);
-        safeFromRadiationHandler.register(this.getCommand("safefromradiation"));
-
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
         this.radiation = new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation());
+
+        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);
+        radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);
         this.metricsHandler = new MetricsHandler(this, server, logger, this.effect, this.potion);
@@ -246,6 +246,14 @@ public final class RadiationPlugin extends JavaPlugin {
 
                 this.migrateFromRegionId(worldName, legacyRegionId);
             });
+        }
+
+        if (protocol < 1) {
+            section.set("lugols-iodine-potion.recipe.enabled", true);
+            section.set("lugols-iodine-potion.recipe.base-potion", LugolsIodinePotion.Config.Recipe.DEFAULT_BASE_POTION.name());
+            section.set("lugols-iodine-potion.recipe.ingredient", LugolsIodinePotion.Config.Recipe.DEFAULT_INGREDIENT.getKey().getKey());
+
+            section.set("lugols-iodine-potion.color", null);
         }
 
         return true;

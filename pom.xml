@@ -58,6 +58,11 @@
             <id>sk89q-repo</id>
             <url>http://maven.sk89q.com/repo/</url>
         </repository>
+
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -97,9 +102,9 @@
         </dependency>
 
         <dependency>
-            <groupId>pl.craftserve.metrics</groupId>
-            <artifactId>plugin-metrics-lite</artifactId>
-            <version>0.1</version>
+            <groupId>com.github.Craftserve</groupId>
+            <artifactId>PluginMetrics</artifactId>
+            <version>lite-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
