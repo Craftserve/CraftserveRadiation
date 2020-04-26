@@ -8,7 +8,7 @@ Autorem pluginu jest [TheMolkaPL](https://github.com/TheMolkaPL).
 Pierwsze uruchomienie
 ---
 
-Przy pierwszym uruchomieniu pluginu potrzebujesz ustalić region który oznaczy obszar jako wolny od radiacji. W innym wypadku strefa radiacji nie będzie działać. Użyj komendy `/safefromradiation <radius>` by stworzyć obszar wolny od radiacji w formie sześcianu (cuboid) w promieniu `radius` od twojej obecnej lokalizacji. Region zostanie założony na pełną wysokość świata. Teraz po wyjściu z regionu wolnego od radiacji powinien pokazywać się boss bar oraz gracze powinni otrzymywać obrażenia.
+Przy pierwszym uruchomieniu pluginu potrzebujesz ustalić region który oznaczy obszar jako wolny od radiacji. W innym wypadku strefa radiacji nie będzie działać. Użyj komendy `/radiation safe <radius>` by stworzyć obszar wolny od radiacji w formie sześcianu (cuboid) w promieniu `radius` od twojej obecnej lokalizacji. Region zostanie założony na pełną wysokość świata. Teraz po wyjściu z regionu wolnego od radiacji powinien pokazywać się boss bar oraz gracze powinni otrzymywać obrażenia.
 
 Pobieranie
 ---
