@@ -9,7 +9,7 @@ depend: ['WorldGuard']
 
 commands:
   radiation:
-    description: 'Set the safe-from-radiation zone.'
+    description: 'Plugin commands.'
     aliases: ['radiacja']
     permission: 'craftserveradiation.radiation'
     usage: '/radiation <safe|potion>'
