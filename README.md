@@ -13,7 +13,7 @@ Przy pierwszym uruchomieniu pluginu potrzebujesz ustalić region który oznaczy 
 Pobieranie
 ---
 
-Najnowsze stabilne kompilacje znajdują sie w https://github.com/8ucz3k/CraftserveRadiation/releases
+Najnowsze stabilne kompilacje znajdują sie w https://github.com/Craftserve/CraftserveRadiation/releases
 
 Kompilacja
 ---
