@@ -1,7 +1,7 @@
 # CraftserveRadiation
 
 Plugin do [Spigota](https://spigotmc.org/) dodający strefę radiacji, taką jak na [Kwadratowej Masakrze](https://kwadratowa.tv) (październik 2019).
-Plugin działa na [Minecraft Java Edition](https://minecraft.net) na wersji 1.14 oraz 1.15. Wymaga zainstalowanego pluginu [WorldGuard](https://enginehub.org/worldguard/).
+Plugin działa na [Minecraft Java Edition](https://minecraft.net) na wersji 1.14, 1.15 oraz 1.16. Wymaga zainstalowanego pluginu [WorldGuard](https://enginehub.org/worldguard/).
 
 Autorem pluginu jest [TheMolkaPL](https://github.com/TheMolkaPL).
 
@@ -13,7 +13,7 @@ Przy pierwszym uruchomieniu pluginu potrzebujesz ustalić region który oznaczy 
 Pobieranie
 ---
 
-Najnowsze stabilne kompilacje znajdują sie w https://github.com/Craftserve/CraftserveRadiation/releases
+Najnowsze stabilne kompilacje znajdują sie w https://github.com/8ucz3k/CraftserveRadiation/releases
 
 Kompilacja
 ---
