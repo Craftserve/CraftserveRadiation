@@ -42,7 +42,10 @@ import org.bukkit.potion.PotionData;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private static final String REGION_ID = "safe_from_radiation";
@@ -70,9 +73,9 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
         if (args.length > 0) {
             switch (args[0]) {
                 case "potion":
-                    return onPotion(player);
+                    return this.onPotion(player);
                 case "safe":
-                    return onSafe(player, label, args);
+                    return this.onSafe(player, label, args);
             }
         }
 
@@ -192,6 +195,13 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        String subCommandInput = args[0].toLowerCase(Locale.ROOT);
+        if (args.length == 1) {
+            return Stream.of("potion", "safe")
+                    .filter(subCommand -> subCommand.startsWith(subCommandInput))
+                    .collect(Collectors.toList());
+        }
+
         return Collections.emptyList();
     }
 
