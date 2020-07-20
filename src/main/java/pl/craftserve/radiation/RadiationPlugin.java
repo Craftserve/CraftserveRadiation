@@ -69,13 +69,12 @@ public final class RadiationPlugin extends JavaPlugin {
     private MetricsHandler metricsHandler;
 
     private RadiationNmsBridge initializeNmsBridge() {
-        String serverVersion = RadiationNmsBridge.getServerVersion(getServer());
+        String serverVersion = RadiationNmsBridge.getServerVersion(this.getServer());
         this.getLogger().log(Level.INFO, "Detected server version: {0}", serverVersion);
 
         switch (serverVersion) {
             case "v1_14_R1":
             case "v1_15_R1":
-                return new V1_14ToV1_15NmsBridge(this, serverVersion);
             case "v1_16_R1":
                 return new V1_14ToV1_15NmsBridge(this, serverVersion);
             default:

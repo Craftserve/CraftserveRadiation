@@ -44,6 +44,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -288,7 +289,7 @@ public class Radiation implements Listener {
                 }
             }
 
-            this.effects = effects;
+            this.effects = Collections.unmodifiableCollection(effects);
 
             String escapeMessage = RadiationPlugin.colorize(section.getString("escape-message"));
             this.escapeMessage = escapeMessage != null && !escapeMessage.isEmpty() ? escapeMessage : null;

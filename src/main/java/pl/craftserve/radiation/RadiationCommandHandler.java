@@ -83,8 +83,8 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private boolean onPotion(Player sender) {
         ItemStack itemStack = new ItemStack(Material.POTION);
         PotionMeta itemMeta = Objects.requireNonNull((PotionMeta) itemStack.getItemMeta());
-        itemMeta.setBasePotionData(new PotionData(potion.getConfig().getRecipe().getBasePotion()));
-        itemStack.setItemMeta(potion.convert(itemMeta));
+        itemMeta.setBasePotionData(new PotionData(this.potion.getConfig().recipe().basePotion()));
+        itemStack.setItemMeta(this.potion.convert(itemMeta));
         sender.getInventory().addItem(itemStack);
         return true;
     }

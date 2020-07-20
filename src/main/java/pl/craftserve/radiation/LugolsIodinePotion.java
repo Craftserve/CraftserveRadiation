@@ -75,7 +75,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         this.durationKey = new NamespacedKey(this.plugin, "duration");
         this.durationSecondsKey = new NamespacedKey(this.plugin, "duration_seconds");
 
-        if (this.config.getRecipe().enabled) {
+        if (this.config.recipe().enabled()) {
             nmsBridge.registerLugolsIodinePotion(this.potionKey, this.config);
         }
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
@@ -85,7 +85,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         Objects.requireNonNull(nmsBridge, "nmsBridge");
 
         HandlerList.unregisterAll(this);
-        if (this.config.getRecipe().enabled) {
+        if (this.config.recipe().enabled()) {
             nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
         }
     }
@@ -138,10 +138,12 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     private void broadcastConsumption(Player player, int durationSeconds) {
         Objects.requireNonNull(player, "player");
-        this.plugin.getLogger().info(player.getName() + " has consumed " + this.config.name() + " with a duration of " + durationSeconds + " seconds");
+
+        String name = this.config.name();
+        this.plugin.getLogger().info(player.getName() + " has consumed " + name + " with a duration of " + durationSeconds + " seconds");
 
         this.config.drinkMessage().ifPresent(rawMessage -> {
-            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, this.config.name());
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, name);
             for (Player online : this.plugin.getServer().getOnlinePlayers()) {
                 if (online.canSee(player)) {
                     online.sendMessage(message);
@@ -152,14 +154,15 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBrew(BrewEvent event) {
-        if (!config.recipe.enabled) {
+        Config.Recipe recipeConfig = this.config.recipe();
+        if (!recipeConfig.enabled()) {
             return;
         }
 
         BrewerInventory inventory = event.getContents();
         BrewingStandWindow window = BrewingStandWindow.fromArray(inventory.getContents());
 
-        if (!window.ingredient.getType().equals(config.recipe.ingredient)) {
+        if (!window.ingredient.getType().equals(recipeConfig.ingredient())) {
             return;
         }
 
@@ -177,7 +180,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
 
             PotionMeta potionMeta = (PotionMeta) itemMeta;
-            if (potionMeta.getBasePotionData().getType().equals(config.recipe.basePotion)) {
+            if (potionMeta.getBasePotionData().getType().equals(recipeConfig.basePotion())) {
                 result.setItemMeta(this.convert(potionMeta));
 
                 modified[i] = true;
@@ -199,11 +202,12 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     public PotionMeta convert(PotionMeta potionMeta) {
         Objects.requireNonNull(potionMeta, "potionMeta");
 
-        Duration duration = this.config.duration();
-        String formattedDuration = this.formatDuration(this.config.duration());
+        Duration duration = this.getDuration();
+        String formattedDuration = this.formatDuration(duration);
 
-        if (this.config.color != null) {
-            potionMeta.setColor(this.config.color);
+        Color color = this.config.color();
+        if (color != null) {
+            potionMeta.setColor(color);
         }
         potionMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
         potionMeta.setDisplayName(ChatColor.AQUA + this.config.name());
@@ -272,7 +276,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     }
 
     public Config getConfig() {
-        return config;
+        return this.config;
     }
 
     //
@@ -324,8 +328,16 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
         }
 
+        public Recipe recipe() {
+            return this.recipe;
+        }
+
         public String name() {
             return this.name;
+        }
+
+        public Color color() {
+            return this.color;
         }
 
         public String description() {
@@ -338,10 +350,6 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         public Optional<String> drinkMessage() {
             return Optional.ofNullable(this.drinkMessage);
-        }
-
-        public Recipe getRecipe() {
-            return recipe;
         }
 
         public static class Recipe {
@@ -381,16 +389,16 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
                 }
             }
 
-            public boolean isEnabled() {
-                return enabled;
+            public boolean enabled() {
+                return this.enabled;
             }
 
-            public PotionType getBasePotion() {
-                return basePotion;
+            public PotionType basePotion() {
+                return this.basePotion;
             }
 
-            public Material getIngredient() {
-                return ingredient;
+            public Material ingredient() {
+                return this.ingredient;
             }
         }
     }

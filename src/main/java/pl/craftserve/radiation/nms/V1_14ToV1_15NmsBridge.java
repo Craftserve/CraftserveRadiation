@@ -38,12 +38,12 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             this.potionBrewerClass = this.getNmsClass("PotionBrewer", version);
 
             Class<?> craftMagicNumbers = this.getObcClass("util.CraftMagicNumbers", version);
-            getItem = craftMagicNumbers.getMethod("getItem", Material.class);
+            this.getItem = craftMagicNumbers.getMethod("getItem", Material.class);
 
             Class<?> iRegistry = this.getNmsClass("IRegistry", version);
             Class<?> minecraftKey = this.getNmsClass("MinecraftKey", version);
             this.newMinecraftKey = minecraftKey.getMethod("a", String.class);
-            potionRegistry = iRegistry.getDeclaredField("POTION").get(null);
+            this.potionRegistry = iRegistry.getDeclaredField("POTION").get(null);
             this.getPotion = potionRegistry.getClass().getMethod("get", minecraftKey);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize 1.14-1.15 bridge", e);
@@ -61,8 +61,9 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
     @Override
     public void registerLugolsIodinePotion(final NamespacedKey potionKey, final LugolsIodinePotion.Config config) {
         try {
-            Object basePotion = getPotion.invoke(potionRegistry, newMinecraftKey.invoke(null, config.getRecipe().getBasePotion().name().toLowerCase()));
-            Object ingredient = getItem.invoke(null, config.getRecipe().getIngredient());
+            LugolsIodinePotion.Config.Recipe recipeConfig = config.recipe();
+            Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, recipeConfig.basePotion().name().toLowerCase()));
+            Object ingredient = this.getItem.invoke(null, recipeConfig.ingredient());
 
             Object registryType = this.iRegistryClass.getDeclaredField("POTION").get(null);
             Object mobEffectArray = Array.newInstance(this.mobEffectClass, 0);
