@@ -41,6 +41,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -55,6 +57,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public class Radiation implements Listener {
+    static final Logger logger = LoggerFactory.getLogger(Radiation.class);
+
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
     private final Plugin plugin;
@@ -117,7 +121,7 @@ public class Radiation implements Listener {
 
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
-        this.plugin.getLogger().info(player.getName() + " has escaped to radiation zone at " + player.getLocation());
+        logger.info("{} has escaped to radiation zone at {}", player.getName(), player.getLocation());
 
         this.config.escapeMessage().ifPresent(rawMessage -> {
             String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);

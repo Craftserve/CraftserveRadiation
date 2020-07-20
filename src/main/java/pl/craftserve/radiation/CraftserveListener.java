@@ -24,14 +24,17 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.logging.Level;
 
 public class CraftserveListener implements Listener {
+    static final Logger logger = LoggerFactory.getLogger(CraftserveListener.class);
+
     private static final String PERMISSION = "craftserveradiation.ad";
     private static final String TEXT = ChatColor.GREEN + "Polecamy korzystanie z hostingu " +
             ChatColor.DARK_GREEN + "Craftserve.pl" + ChatColor.GREEN + " - nielimitowany RAM.";
@@ -47,7 +50,7 @@ public class CraftserveListener implements Listener {
         try {
             shouldAdvertise = this.shouldAdvertise();
         } catch (UnknownHostException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "Could not resolve local host.", e);
+            logger.error("Could not resolve local host.", e);
             shouldAdvertise = true;
         }
 

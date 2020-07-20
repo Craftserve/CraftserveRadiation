@@ -23,27 +23,26 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.craftserve.metrics.pluginmetricslite.MetricSubmitEvent;
 import pl.craftserve.metrics.pluginmetricslite.MetricsLite;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MetricsHandler implements Listener  {
+    static final Logger logger = LoggerFactory.getLogger(MetricsHandler.class);
+
     private final Plugin plugin;
     private final Server server;
-    private final Logger logger;
 
     private final LugolsIodineEffect effect;
     private final LugolsIodinePotion potion;
 
-    public MetricsHandler(Plugin plugin, Server server, Logger logger,
-                          LugolsIodineEffect effect, LugolsIodinePotion potion) {
+    public MetricsHandler(Plugin plugin, Server server, LugolsIodineEffect effect, LugolsIodinePotion potion) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.server = Objects.requireNonNull(server, "server");
-        this.logger = Objects.requireNonNull(logger, "logger");
 
         this.effect = Objects.requireNonNull(effect, "effect");
         this.potion = Objects.requireNonNull(potion, "potion");
@@ -55,7 +54,7 @@ public class MetricsHandler implements Listener  {
         try {
             MetricsLite.start(this.plugin);
         } catch (Throwable throwable) {
-            this.logger.log(Level.SEVERE, "Could not start metrics.", throwable);
+            logger.error("Could not start metrics.", throwable);
         }
     }
 
@@ -63,7 +62,7 @@ public class MetricsHandler implements Listener  {
         try {
             MetricsLite.stopIfRunning(this.plugin);
         } catch (Throwable throwable) {
-            this.logger.log(Level.SEVERE, "Could not stop metrics.", throwable);
+            logger.error("Could not stop metrics.", throwable);
         }
 
         HandlerList.unregisterAll(this);

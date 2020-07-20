@@ -2,17 +2,17 @@ package pl.craftserve.radiation.nms;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.plugin.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.Objects;
-import java.util.logging.Level;
 
 public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
-    private final Plugin plugin;
+    static final Logger logger = LoggerFactory.getLogger(V1_14ToV1_15NmsBridge.class);
 
     private final Class<?> itemClass;
     private final Class<?> iRegistryClass;
@@ -26,8 +26,7 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
 
     private final Object potionRegistry;
 
-    public V1_14ToV1_15NmsBridge(final Plugin plugin, final String version) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
+    public V1_14ToV1_15NmsBridge(final String version) {
         Objects.requireNonNull(version, "version");
 
         try {
@@ -76,7 +75,7 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             registerBrewingRecipe.setAccessible(true);
             registerBrewingRecipe.invoke(null, basePotion, ingredient, potion);
         } catch (Exception e) {
-            this.plugin.getLogger().log(Level.SEVERE, "Could not handle reflective operation.", e);
+            logger.error("Could not handle reflective operation.", e);
         }
     }
 
