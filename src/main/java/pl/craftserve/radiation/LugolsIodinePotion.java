@@ -38,6 +38,7 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -203,6 +205,17 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         });
     }
 
+    public ItemStack createItemStack(int amount) {
+        ItemStack itemStack = new ItemStack(Material.POTION, amount);
+        PotionMeta potionMeta = (PotionMeta) Objects.requireNonNull(itemStack.getItemMeta());
+
+        PotionData potionData = new PotionData(this.config.recipe().basePotion());
+        potionMeta.setBasePotionData(potionData);
+
+        itemStack.setItemMeta(this.convert(potionMeta));
+        return itemStack;
+    }
+
     public PotionMeta convert(PotionMeta potionMeta) {
         Objects.requireNonNull(potionMeta, "potionMeta");
 
@@ -274,10 +287,6 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         public ItemStack getResult(int index) {
             return this.results[index];
         }
-    }
-
-    public Config getConfig() {
-        return this.config;
     }
 
     //

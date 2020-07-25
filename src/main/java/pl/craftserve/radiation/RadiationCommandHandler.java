@@ -29,7 +29,6 @@ import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -37,8 +36,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.PotionData;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Collections;
 import java.util.List;
@@ -84,11 +82,14 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     }
 
     private boolean onPotion(Player sender) {
-        ItemStack itemStack = new ItemStack(Material.POTION);
-        PotionMeta itemMeta = Objects.requireNonNull((PotionMeta) itemStack.getItemMeta());
-        itemMeta.setBasePotionData(new PotionData(this.potion.getConfig().recipe().basePotion()));
-        itemStack.setItemMeta(this.potion.convert(itemMeta));
-        sender.getInventory().addItem(itemStack);
+        ItemStack itemStack = this.potion.createItemStack(1);
+        ItemMeta itemMeta = Objects.requireNonNull(itemStack.getItemMeta());
+
+        if (sender.getInventory().addItem(itemStack).isEmpty()) {
+            sender.sendMessage(ChatColor.GREEN + "You have received one " + itemMeta.getDisplayName());
+        } else {
+            sender.sendMessage(ChatColor.RED + "Your inventory is full!");
+        }
         return true;
     }
 
