@@ -39,11 +39,13 @@ public class RadiationEvent extends Event implements Cancellable {
     }
 
     private final Player player;
+    private final Radiation radiation;
     private boolean cancel;
     private boolean showWarning = true;
 
-    public RadiationEvent(Player player) {
+    public RadiationEvent(Player player, Radiation radiation) {
         this.player = Objects.requireNonNull(player, "player");
+        this.radiation = Objects.requireNonNull(radiation, "radiation");
     }
 
     @Override
@@ -62,6 +64,10 @@ public class RadiationEvent extends Event implements Cancellable {
 
     public Player getPlayer() {
         return this.player;
+    }
+
+    public Radiation getRadiation() {
+        return this.radiation;
     }
 
     public boolean shouldShowWarning() {

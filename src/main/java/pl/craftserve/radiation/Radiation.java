@@ -165,7 +165,7 @@ public class Radiation implements Listener {
 
             server.getOnlinePlayers().forEach(player -> {
                 if (matcher.test(player)) {
-                    RadiationEvent event = new RadiationEvent(player);
+                    RadiationEvent event = new RadiationEvent(player, Radiation.this);
                     server.getPluginManager().callEvent(event);
 
                     boolean showBossBar = event.shouldShowWarning();
@@ -179,6 +179,8 @@ public class Radiation implements Listener {
 
                     if (showBossBar) {
                         addBossBar(player);
+                    } else {
+                        removeBossBar(player);
                     }
                 } else {
                     removeAffectedPlayer(player, true);
