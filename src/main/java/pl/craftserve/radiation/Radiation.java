@@ -250,7 +250,7 @@ public class Radiation implements Listener {
         public Config(BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
             this.bar = Objects.requireNonNull(bar, "bar");
             this.effects = Objects.requireNonNull(effects, "effects");
-            this.escapeMessage = Objects.requireNonNull(escapeMessage, "escapeMessage");
+            this.escapeMessage = escapeMessage;
         }
 
         public Config(ConfigurationSection section) throws InvalidConfigurationException {

@@ -307,7 +307,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             this.color = color;
             this.description = Objects.requireNonNull(description, "description");
             this.duration = Objects.requireNonNull(duration, "duration");
-            this.drinkMessage = Objects.requireNonNull(drinkMessage, "drinkMessage");
+            this.drinkMessage = drinkMessage;
         }
 
         public Config(ConfigurationSection section) throws InvalidConfigurationException {
@@ -316,7 +316,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
 
             this.recipe = new Recipe(section.getConfigurationSection("recipe"));
-            this.name = section.getString("name", "Lugol's Iodine");
+            this.name = Objects.requireNonNull(section.getString("name", "Lugol's Iodine"));
+
             String colorHex = section.getString("color", null);
             try {
                 this.color = colorHex == null ? null : Color.fromRGB(
@@ -327,8 +328,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             } catch (NumberFormatException | StringIndexOutOfBoundsException exception) {
                 throw new InvalidConfigurationException("Invalid potion color.", exception);
             }
-            this.description = section.getString("description", "Radiation resistance ({0})");
-            this.duration = Duration.ofSeconds(section.getInt("duration", 600));
+
+            this.description = Objects.requireNonNull(section.getString("description", "Radiation resistance ({0})"));
+            this.duration = Objects.requireNonNull(Duration.ofSeconds(section.getInt("duration", 600)));
 
             String drinkMessage = RadiationPlugin.colorize(section.getString("drink-message"));
             this.drinkMessage = drinkMessage != null && !drinkMessage.isEmpty() ? drinkMessage : null;

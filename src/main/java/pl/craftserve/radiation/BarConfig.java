@@ -48,7 +48,7 @@ public class BarConfig {
             section = new MemoryConfiguration();
         }
 
-        this.title = RadiationPlugin.colorize(section.getString("title"));
+        this.title = Objects.requireNonNull(RadiationPlugin.colorize(section.getString("title", "")));
 
         String color = section.getString("color", BarColor.WHITE.name());
         if (color == null) {
@@ -56,7 +56,7 @@ public class BarConfig {
         }
 
         try {
-            this.color = BarColor.valueOf(color.toUpperCase());
+            this.color = Objects.requireNonNull(BarColor.valueOf(color.toUpperCase()));
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("Unknown bar color: " + color);
         }
@@ -67,7 +67,7 @@ public class BarConfig {
         }
 
         try {
-            this.style = BarStyle.valueOf(style.toUpperCase());
+            this.style = Objects.requireNonNull(BarStyle.valueOf(style.toUpperCase()));
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("Unknown bar style: " + style);
         }
@@ -80,7 +80,7 @@ public class BarConfig {
                 throw new InvalidConfigurationException("Unknown bar flag: " + flagName);
             }
         }
-        this.flags = flags.toArray(new BarFlag[0]);
+        this.flags = Objects.requireNonNull(flags.toArray(new BarFlag[0]));
     }
 
     public String title() {
@@ -101,7 +101,8 @@ public class BarConfig {
 
     public BossBar create(Server server, ChatColor color) {
         Objects.requireNonNull(server, "server");
-        String title = Objects.toString(Objects.toString(color, "") + this.title(), "");
-        return server.createBossBar(title, this.color(), this.style(), this.flags());
+        Objects.requireNonNull(color, "color");
+
+        return server.createBossBar(color + this.title(), this.color(), this.style(), this.flags());
     }
 }

@@ -43,22 +43,31 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             Class<?> minecraftKey = this.getNmsClass("MinecraftKey", version);
             this.newMinecraftKey = minecraftKey.getMethod("a", String.class);
             this.potionRegistry = iRegistry.getDeclaredField("POTION").get(null);
-            this.getPotion = potionRegistry.getClass().getMethod("get", minecraftKey);
+            this.getPotion = this.potionRegistry.getClass().getMethod("get", minecraftKey);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize 1.14-1.15 bridge", e);
         }
     }
 
     private Class<?> getNmsClass(String clazz, String version) throws ClassNotFoundException {
+        Objects.requireNonNull(clazz, "clazz");
+        Objects.requireNonNull(version, "version");
+
         return Class.forName(MessageFormat.format("net.minecraft.server.{1}.{0}", clazz, version));
     }
 
     private Class<?> getObcClass(String clazz, String version) throws ClassNotFoundException {
+        Objects.requireNonNull(clazz, "clazz");
+        Objects.requireNonNull(version, "version");
+
         return Class.forName(MessageFormat.format("org.bukkit.craftbukkit.{1}.{0}", clazz, version));
     }
 
     @Override
     public void registerLugolsIodinePotion(final NamespacedKey potionKey, final LugolsIodinePotion.Config config) {
+        Objects.requireNonNull(potionKey, "potionKey");
+        Objects.requireNonNull(config, "config");
+
         try {
             LugolsIodinePotion.Config.Recipe recipeConfig = config.recipe();
             Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, recipeConfig.basePotion().name().toLowerCase()));
