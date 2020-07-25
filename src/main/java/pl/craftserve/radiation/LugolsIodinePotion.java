@@ -209,10 +209,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         Duration duration = this.getDuration();
         String formattedDuration = this.formatDuration(duration);
 
-        Color color = this.config.color();
-        if (color != null) {
-            potionMeta.setColor(color);
-        }
+        this.config.color().ifPresent(potionMeta::setColor);
         potionMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
         potionMeta.setDisplayName(ChatColor.AQUA + this.config.name());
         potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + MessageFormat.format(this.config.description(), formattedDuration)));
@@ -340,8 +337,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return this.name;
         }
 
-        public Color color() {
-            return this.color;
+        public Optional<Color> color() {
+            return Optional.ofNullable(this.color);
         }
 
         public String description() {
