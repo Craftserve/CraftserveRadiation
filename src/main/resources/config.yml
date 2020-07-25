@@ -18,22 +18,25 @@ lugols-iodine-bar:
 # Lugol's iodine potion item options.
 lugols-iodine-potion:
   recipe:
-    # Should brewing recipe be enabled
+    # Should the potion be brewable in brewing stand?
     enabled: true
-    # Base potion (https://papermc.io/javadocs/paper/1.15/org/bukkit/potion/PotionType.html)
+    # Base potion type. List of potion types is available here:
+    # https://papermc.io/javadocs/paper/1.15/org/bukkit/potion/PotionType.html
     base-potion: 'THICK'
-    # Ingredient (https://papermc.io/javadocs/paper/1.15/org/bukkit/Material.html)
+    # Ingredient item ID.
+    # IDs can be obtained when hovering over items using F3+H debug mode.
     ingredient: 'ghast_tear'
 
   # Name of the item.
   name: 'Lugol''s Iodine'
-  # Color of potion (in hex (https://htmlcolorcodes.com/), or null for base potion color)
+  # Color of the potion in HEX format, leave empty for base potion color.
+  # Please visit https://htmlcolorcodes.com/ to obtain HEX color.
   color: '#197d14'
-  # Description of the item.
+  # Description of the item. {0} will be replaced with the duration of the potion effect.
   description: 'Radiation resistance ({0})'
-  # Duration in seconds of effect given when a player consumes the potion.
+  # Duration in seconds of effect given when a player consumes the potion, 10 seconds by default.
   duration: 600
-  # Colorable broadcast message shown when a player consumes the potion.
+  # Colorable broadcast message shown when a player consumes the potion, leave empty for no message.
   drink-message: '{0}&c drank {1}.'
 
 # Radiation zone options.
@@ -73,5 +76,5 @@ radiation:
       has-particles: false
       # Does this effect give an icon?
       has-icon: false
-  # Colorable broadcast message shown when a player enters radiation zone.
+  # Colorable broadcast message shown when a player enters radiation zone, leave empty for no message/
   escape-message: '{0}&c has escaped to radiation zone.'

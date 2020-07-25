@@ -320,7 +320,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
             String colorHex = section.getString("color", null);
             try {
-                this.color = colorHex == null ? null : Color.fromRGB(
+                this.color = colorHex == null || colorHex.isEmpty() ? null : Color.fromRGB(
                         Integer.parseInt(colorHex.substring(1, 3), 16),
                         Integer.parseInt(colorHex.substring(3, 5), 16),
                         Integer.parseInt(colorHex.substring(5, 7), 16)
