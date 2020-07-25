@@ -16,7 +16,6 @@
 
 package pl.craftserve.radiation;
 
-import com.google.common.collect.ImmutableSet;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
@@ -134,7 +133,7 @@ public class Radiation implements Listener {
     }
 
     public Set<UUID> getAffectedPlayers() {
-        return ImmutableSet.copyOf(this.affectedPlayers);
+        return Collections.unmodifiableSet(this.affectedPlayers);
     }
 
     public boolean removeAffectedPlayer(Player player, boolean removeBossBar) {
