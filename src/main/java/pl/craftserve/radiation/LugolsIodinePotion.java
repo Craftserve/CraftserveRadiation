@@ -382,20 +382,18 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
                 }
 
                 this.enabled = section.getBoolean("enabled", true);
-                if (this.enabled) {
-                    this.ingredient = Material.matchMaterial(Objects.requireNonNull(section.getString("ingredient", DEFAULT_INGREDIENT.getKey().getKey())));
-                    if (ingredient == null) {
-                        throw new InvalidConfigurationException("Invalid recipe ingredient name");
-                    }
 
-                    try {
-                        this.basePotion = PotionType.valueOf(Objects.requireNonNull(section.getString("base-potion", DEFAULT_BASE_POTION.name())).toUpperCase());
-                    } catch (IllegalArgumentException exception) {
-                        throw new InvalidConfigurationException("Invalid recipe base potion name", exception);
-                    }
-                } else {
-                    this.ingredient = null;
-                    this.basePotion = null;
+                String ingredientInput = Objects.requireNonNull(section.getString("ingredient", DEFAULT_INGREDIENT.getKey().getKey()));
+                this.ingredient = Material.matchMaterial(ingredientInput);
+                if (this.ingredient == null) {
+                    throw new InvalidConfigurationException("Invalid recipe ingredient name: " + ingredientInput);
+                }
+
+                String basePotionInput = Objects.requireNonNull(section.getString("base-potion", DEFAULT_BASE_POTION.name())).toUpperCase(Locale.ROOT);
+                try {
+                    this.basePotion = PotionType.valueOf(basePotionInput);
+                } catch (IllegalArgumentException exception) {
+                    throw new InvalidConfigurationException("Invalid recipe base potion name: " + basePotionInput, exception);
                 }
             }
 
