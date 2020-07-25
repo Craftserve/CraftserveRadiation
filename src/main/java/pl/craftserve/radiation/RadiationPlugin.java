@@ -102,7 +102,7 @@ public final class RadiationPlugin extends JavaPlugin {
         try {
             this.radiationNmsBridge = this.initializeNmsBridge();
         } catch (Exception e) {
-            logger.error("Failed to launch CraftserveRadiation. Plausibly your server version is unsupported.", e);
+            logger.error("Failed to launch {}. Plausibly your server version is unsupported.", this.getName(), e);
             this.setEnabled(false);
             return;
         }
@@ -132,7 +132,10 @@ public final class RadiationPlugin extends JavaPlugin {
         this.effect = new LugolsIodineEffect(this);
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
-        this.radiation = new Radiation(this, new Radiation.FlagMatcher(this.radiationFlag), this.config.radiation());
+
+        // Standard radiation based on WorldGuard flag matcher.
+        Radiation.Matcher radiationFlagMatcher = new Radiation.FlagMatcher(this.radiationFlag);
+        this.radiation = new Radiation(this, radiationFlagMatcher, this.config.radiation());
 
         RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);
         radiationCommandHandler.register(this.getCommand("radiation"));
