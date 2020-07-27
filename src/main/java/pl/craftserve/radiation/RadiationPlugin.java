@@ -58,8 +58,8 @@ public final class RadiationPlugin extends JavaPlugin {
     private static final int CURRENT_PROTOCOL_VERSION = 1;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
 
-    private RadiationNmsBridge radiationNmsBridge;
     private Flag<Boolean> radiationFlag;
+    private RadiationNmsBridge radiationNmsBridge;
     private Config config;
 
     private LugolsIodineEffect effect;
@@ -181,6 +181,18 @@ public final class RadiationPlugin extends JavaPlugin {
 
     public Config getPluginConfig() {
         return this.config;
+    }
+
+    public LugolsIodineEffect getEffectHandler() {
+        return this.effect;
+    }
+
+    public LugolsIodinePotion getPotionHandler() {
+        return this.potion;
+    }
+
+    public Radiation getStandardRadiation() {
+        return this.radiation;
     }
 
     @SuppressWarnings("unchecked")
