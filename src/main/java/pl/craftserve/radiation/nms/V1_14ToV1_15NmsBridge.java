@@ -80,14 +80,13 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
     }
 
     @Override
-    public void registerLugolsIodinePotion(final NamespacedKey potionKey, final LugolsIodinePotion.Config config) {
+    public void registerLugolsIodinePotion(final NamespacedKey potionKey, final LugolsIodinePotion.Config.Recipe config) {
         Objects.requireNonNull(potionKey, "potionKey");
         Objects.requireNonNull(config, "config");
 
         try {
-            LugolsIodinePotion.Config.Recipe recipeConfig = config.recipe();
-            Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, recipeConfig.basePotion().name().toLowerCase()));
-            Object ingredient = this.getItem.invoke(null, recipeConfig.ingredient());
+            Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, config.basePotion().name().toLowerCase()));
+            Object ingredient = this.getItem.invoke(null, config.ingredient());
 
             Object registryType = this.iRegistryClass.getDeclaredField("POTION").get(null);
             Object mobEffectArray = Array.newInstance(this.mobEffectClass, 0);

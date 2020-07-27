@@ -81,8 +81,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         this.durationKey = new NamespacedKey(this.plugin, "duration");
         this.durationSecondsKey = new NamespacedKey(this.plugin, "duration_seconds");
 
-        if (this.config.recipe().enabled()) {
-            nmsBridge.registerLugolsIodinePotion(this.potionKey, this.config);
+        Config.Recipe recipeConfig = this.config.recipe();
+        if (recipeConfig.enabled()) {
+            nmsBridge.registerLugolsIodinePotion(this.potionKey, recipeConfig);
         }
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
