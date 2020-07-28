@@ -20,6 +20,7 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.StringFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
@@ -64,8 +65,10 @@ public final class RadiationPlugin extends JavaPlugin {
 
     private static final int CURRENT_PROTOCOL_VERSION = 2;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
+    private static final Flag<String> RADIATION_ID_FLAG = new StringFlag("radiation-id");
 
     private Flag<Boolean> radiationFlag;
+    private Flag<String> radiationIdFlag;
     private RadiationNmsBridge radiationNmsBridge;
     private Config config;
 
@@ -99,7 +102,8 @@ public final class RadiationPlugin extends JavaPlugin {
             throw new IllegalStateException("Flag registry is not set! Plugin must shut down...");
         }
 
-        this.radiationFlag = this.getOrCreateRadiationFlag(flagRegistry);
+        this.radiationFlag = this.getOrCreateFlag(flagRegistry, RADIATION_FLAG);
+        this.radiationIdFlag = this.getOrCreateFlag(flagRegistry, RADIATION_ID_FLAG);
     }
 
     @Override
@@ -194,6 +198,10 @@ public final class RadiationPlugin extends JavaPlugin {
         return this.radiationFlag;
     }
 
+    public Flag<String> getRadiationIdFlag() {
+        return this.radiationIdFlag;
+    }
+
     public Config getPluginConfig() {
         return this.config;
     }
@@ -211,15 +219,16 @@ public final class RadiationPlugin extends JavaPlugin {
     }
 
     @SuppressWarnings("unchecked")
-    private Flag<Boolean> getOrCreateRadiationFlag(FlagRegistry flagRegistry) {
+    private <T> Flag<T> getOrCreateFlag(FlagRegistry flagRegistry, Flag<T> defaultFlag) {
         Objects.requireNonNull(flagRegistry, "flagRegistry");
+        Objects.requireNonNull(defaultFlag, "defaultFlag");
 
-        Flag<Boolean> flag = (Flag<Boolean>) flagRegistry.get(RADIATION_FLAG.getName());
+        Flag<T> flag = (Flag<T>) flagRegistry.get(defaultFlag.getName());
         if (flag != null) {
             return flag;
         }
 
-        flag = RADIATION_FLAG;
+        flag = defaultFlag;
         flagRegistry.register(flag);
         return flag;
     }
