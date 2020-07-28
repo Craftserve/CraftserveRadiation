@@ -81,5 +81,8 @@ radiations:
         has-particles: false
         # Does this effect give an icon?
         has-icon: false
+    # Should mob camera effect be enabled? If so, give the name of the mob, possible values:
+    # false (feature disabled), cave_spider, creeper, enderman, spider
+    mob-camera-effect: false
     # Colorable broadcast message shown when a player enters radiation zone, leave empty for no message.
     enter-message: '{0}&c has entered radiation zone.'

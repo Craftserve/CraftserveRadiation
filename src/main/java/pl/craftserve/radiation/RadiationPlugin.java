@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
+import pl.craftserve.radiation.nms.V1_16NmsBridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,8 +89,9 @@ public final class RadiationPlugin extends JavaPlugin {
         switch (serverVersion) {
             case "v1_14_R1":
             case "v1_15_R1":
-            case "v1_16_R1":
                 return new V1_14ToV1_15NmsBridge(serverVersion);
+            case "v1_16_R1":
+                return new V1_16NmsBridge(serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
@@ -162,7 +164,7 @@ public final class RadiationPlugin extends JavaPlugin {
         this.potion.enable(this.radiationNmsBridge);
         this.display.enable();
 
-        this.activeRadiations.forEach((id, radiation) -> radiation.enable());
+        this.activeRadiations.forEach((id, radiation) -> radiation.enable(this.radiationNmsBridge));
 
         Set<String> radiationIds = new TreeSet<>(Comparator.naturalOrder());
         radiationIds.addAll(this.activeRadiations.keySet());

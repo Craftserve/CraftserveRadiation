@@ -18,6 +18,8 @@ package pl.craftserve.radiation.nms;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.LugolsIodinePotion;
@@ -106,5 +108,15 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
     @Override
     public void unregisterLugolsIodinePotion(final NamespacedKey potionKey) {
         // todo unregister potion and brewing recipe
+    }
+
+    @Override
+    public void playMobCameraEffect(Player player, EntityType entityType) {
+        // TODO play the effect
+    }
+
+    @Override
+    public void pauseMobCameraEffect(Player player) {
+        // TODO pause the effect
     }
 }

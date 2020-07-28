@@ -17,6 +17,7 @@
 package pl.craftserve.radiation;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.LocalPlayer;
@@ -27,11 +28,14 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -44,6 +48,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -60,12 +65,16 @@ import java.util.function.Predicate;
 public class Radiation implements Listener {
     static final Logger logger = LoggerFactory.getLogger(Radiation.class);
 
+    private static final Set<EntityType> SUPPORTED_MOB_CAMERA_EFFECTS = ImmutableSet.of(
+            EntityType.CAVE_SPIDER, EntityType.CREEPER, EntityType.ENDERMAN, EntityType.SPIDER);
+
     private final Set<UUID> affectedPlayers = new HashSet<>(128);
 
     private final Plugin plugin;
     private final Matcher matcher;
     private final Config config;
 
+    private RadiationNmsBridge nmsBridge;
     private BossBar bossBar;
     private Task task;
 
@@ -75,7 +84,9 @@ public class Radiation implements Listener {
         this.config = Objects.requireNonNull(config, "config");
     }
 
-    public void enable() {
+    public void enable(RadiationNmsBridge nmsBridge) {
+        this.nmsBridge = Objects.requireNonNull(nmsBridge, "nmsBridge");
+
         Server server = this.plugin.getServer();
         this.bossBar = this.config.bar().create(server, ChatColor.DARK_RED);
 
@@ -87,6 +98,12 @@ public class Radiation implements Listener {
 
     public void disable() {
         HandlerList.unregisterAll(this);
+
+        if (this.nmsBridge != null) {
+            for (Player onlinePlayer : this.plugin.getServer().getOnlinePlayers()) {
+                this.nmsBridge.pauseMobCameraEffect(onlinePlayer);
+            }
+        }
 
         if (this.task != null) {
             this.task.cancel();
@@ -148,6 +165,9 @@ public class Radiation implements Listener {
         Objects.requireNonNull(player, "player");
 
         boolean ok = this.affectedPlayers.remove(player.getUniqueId());
+        if (ok && this.config.mobCameraEffect().isPresent()) {
+            this.nmsBridge.pauseMobCameraEffect(player);
+        }
         if (removeBossBar) {
             this.removeBossBar(player);
         }
@@ -170,6 +190,7 @@ public class Radiation implements Listener {
         public void run() {
             Server server = plugin.getServer();
             Iterable<PotionEffect> effects = config.effects();
+            EntityType mobCameraEffect = config.mobCameraEffect().orElse(null);
 
             server.getOnlinePlayers().forEach(player -> {
                 if (matcher.test(player)) {
@@ -182,6 +203,10 @@ public class Radiation implements Listener {
                     if (!cancel) {
                         for (PotionEffect effect : effects) {
                             player.addPotionEffect(effect, true);
+                        }
+
+                        if (mobCameraEffect != null) {
+                            nmsBridge.playMobCameraEffect(player, mobCameraEffect);
                         }
 
                         addAffectedPlayer(player, showBossBar);
@@ -269,12 +294,14 @@ public class Radiation implements Listener {
         private final String id;
         private final BarConfig bar;
         private final Iterable<PotionEffect> effects;
+        private final EntityType mobCameraEffect;
         private final String enterMessage;
 
-        public Config(String id, BarConfig bar, Iterable<PotionEffect> effects, String enterMessage) {
+        public Config(String id, BarConfig bar, Iterable<PotionEffect> effects, EntityType mobCameraEffect, String enterMessage) {
             this.id = Objects.requireNonNull(id, "id");
             this.bar = Objects.requireNonNull(bar, "bar");
             this.effects = Objects.requireNonNull(effects, "effects");
+            this.mobCameraEffect = mobCameraEffect;
             this.enterMessage = enterMessage;
 
             Preconditions.checkArgument(!id.isEmpty(), "id cannot be empty");
@@ -326,6 +353,25 @@ public class Radiation implements Listener {
 
             this.effects = Collections.unmodifiableCollection(effects);
 
+            String mobCameraEffectInput = section.getString("mob-camera-effect");
+            if (mobCameraEffectInput == null || mobCameraEffectInput.isEmpty() || mobCameraEffectInput.equals("false")) {
+                this.mobCameraEffect = null;
+            } else {
+                NamespacedKey entityTypeKey;
+                try {
+                    entityTypeKey = NamespacedKey.minecraft(mobCameraEffectInput);
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidConfigurationException("Unknown mob \"" + mobCameraEffectInput + "\" in the \"" + id + "\" radiation.");
+                }
+
+                this.mobCameraEffect = Registry.ENTITY_TYPE.get(entityTypeKey);
+                if (this.mobCameraEffect == null) {
+                    throw new InvalidConfigurationException("Unknown mob \"" + mobCameraEffectInput + "\" in the \"" + id + "\" radiation.");
+                } else if (!SUPPORTED_MOB_CAMERA_EFFECTS.contains(this.mobCameraEffect)) {
+                    throw new InvalidConfigurationException("Mob camera effect \"" + this.mobCameraEffect.getKey().getKey() + "\" in the \"" + id + "\" radiation is not supported.");
+                }
+            }
+
             String enterMessage = RadiationPlugin.colorize(section.getString("enter-message"));
             this.enterMessage = enterMessage != null && !enterMessage.isEmpty() ? enterMessage : null;
         }
@@ -340,6 +386,10 @@ public class Radiation implements Listener {
 
         public Iterable<PotionEffect> effects() {
             return this.effects;
+        }
+
+        public Optional<EntityType> mobCameraEffect() {
+            return Optional.ofNullable(this.mobCameraEffect);
         }
 
         public Optional<String> enterMessage() {
