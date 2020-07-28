@@ -82,4 +82,4 @@ radiations:
         # Does this effect give an icon?
         has-icon: false
     # Colorable broadcast message shown when a player enters radiation zone, leave empty for no message.
-    escape-message: '{0}&c has escaped to radiation zone.'
+    enter-message: '{0}&c has entered radiation zone.'

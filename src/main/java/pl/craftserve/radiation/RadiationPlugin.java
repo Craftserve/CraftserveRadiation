@@ -63,7 +63,7 @@ public final class RadiationPlugin extends JavaPlugin {
         return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
     }
 
-    private static final int CURRENT_PROTOCOL_VERSION = 2;
+    private static final int CURRENT_PROTOCOL_VERSION = 3;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
     private static final Flag<String> RADIATION_TYPE_FLAG = new StringFlag("radiation-type");
 
@@ -306,6 +306,18 @@ public final class RadiationPlugin extends JavaPlugin {
 
             section.set("radiation", null); // remove old section
             section.set("radiations.default", defaultRadiation);
+        }
+
+        if (protocol < 3) {
+            ConfigurationSection radiations = section.getConfigurationSection("radiations");
+            if (radiations != null) {
+                for (String key : radiations.getKeys(false)) {
+                    ConfigurationSection radiation = radiations.getConfigurationSection(key);
+                    if (radiation != null) {
+                        radiation.set("enter-message", radiation.getString("escape-message"));
+                    }
+                }
+            }
         }
 
         return true;

@@ -126,7 +126,7 @@ public class Radiation implements Listener {
         String radiationId = this.config.id();
         logger.info("{} has escaped to \"{}\" radiation zone at {}", player.getName(), radiationId, player.getLocation());
 
-        this.config.escapeMessage().ifPresent(rawMessage -> {
+        this.config.enterMessage().ifPresent(rawMessage -> {
             String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, radiationId);
             for (Player online : this.plugin.getServer().getOnlinePlayers()) {
                 if (online.canSee(player)) {
@@ -269,13 +269,13 @@ public class Radiation implements Listener {
         private final String id;
         private final BarConfig bar;
         private final Iterable<PotionEffect> effects;
-        private final String escapeMessage;
+        private final String enterMessage;
 
-        public Config(String id, BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+        public Config(String id, BarConfig bar, Iterable<PotionEffect> effects, String enterMessage) {
             this.id = Objects.requireNonNull(id, "id");
             this.bar = Objects.requireNonNull(bar, "bar");
             this.effects = Objects.requireNonNull(effects, "effects");
-            this.escapeMessage = escapeMessage;
+            this.enterMessage = enterMessage;
 
             Preconditions.checkArgument(!id.isEmpty(), "id cannot be empty");
         }
@@ -326,8 +326,8 @@ public class Radiation implements Listener {
 
             this.effects = Collections.unmodifiableCollection(effects);
 
-            String escapeMessage = RadiationPlugin.colorize(section.getString("escape-message"));
-            this.escapeMessage = escapeMessage != null && !escapeMessage.isEmpty() ? escapeMessage : null;
+            String enterMessage = RadiationPlugin.colorize(section.getString("enter-message"));
+            this.enterMessage = enterMessage != null && !enterMessage.isEmpty() ? enterMessage : null;
         }
 
         public String id() {
@@ -342,8 +342,8 @@ public class Radiation implements Listener {
             return this.effects;
         }
 
-        public Optional<String> escapeMessage() {
-            return Optional.ofNullable(this.escapeMessage);
+        public Optional<String> enterMessage() {
+            return Optional.ofNullable(this.enterMessage);
         }
     }
 }
