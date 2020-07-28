@@ -146,9 +146,10 @@ public final class RadiationPlugin extends JavaPlugin {
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
 
         for (Radiation.Config radiationConfig : this.config.radiations()) {
-            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag);
-            Radiation radiation = new Radiation(this, matcher, radiationConfig);
-            this.activeRadiations.put(radiationConfig.id(), radiation);
+            String id = radiationConfig.id();
+            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag, this.radiationIdFlag, Collections.singleton(id));
+
+            this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
         }
 
         RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);

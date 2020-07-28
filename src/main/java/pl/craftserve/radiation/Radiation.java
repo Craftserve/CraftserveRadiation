@@ -19,6 +19,7 @@ package pl.craftserve.radiation;
 import com.google.common.base.Preconditions;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
@@ -220,13 +221,17 @@ public class Radiation implements Listener {
     }
 
     /**
-     * Tests if the given flag matches radiation.
+     * Tests if the given flags matches the radiation IDs.
      */
     public static class FlagMatcher implements WorldGuardMatcher {
-        private final Flag<Boolean> flag;
+        private final Flag<Boolean> isRadioactiveFlag;
+        private final Flag<String> radiationIdFlag;
+        private final Set<String> acceptedRadiationIds;
 
-        public FlagMatcher(Flag<Boolean> flag) {
-            this.flag = Objects.requireNonNull(flag, "flag");
+        public FlagMatcher(Flag<Boolean> isRadioactiveFlag, Flag<String> radiationIdFlag, Set<String> acceptedRadiationIds) {
+            this.isRadioactiveFlag = Objects.requireNonNull(isRadioactiveFlag, "isRadioactiveFlag");
+            this.radiationIdFlag = Objects.requireNonNull(radiationIdFlag, "radiationIdFlag");
+            this.acceptedRadiationIds = Objects.requireNonNull(acceptedRadiationIds, "acceptedRadiationIds");
         }
 
         @Override
@@ -234,9 +239,19 @@ public class Radiation implements Listener {
             Location location = BukkitAdapter.adapt(player.getLocation());
             location = location.setY(Math.max(0, Math.min(255, location.getY())));
             ApplicableRegionSet regions = regionContainer.createQuery().getApplicableRegions(location);
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 
-            Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
-            return value != null && value;
+            Boolean radioactive = regions.queryValue(localPlayer, this.isRadioactiveFlag);
+            if (radioactive == null || !radioactive) {
+                return false;
+            }
+
+            String radiationId = regions.queryValue(localPlayer, this.radiationIdFlag);
+            if (radiationId == null || radiationId.isEmpty()) {
+                radiationId = Config.DEFAULT_ID;
+            }
+
+            return this.acceptedRadiationIds.contains(radiationId);
         }
     }
 
