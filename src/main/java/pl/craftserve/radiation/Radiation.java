@@ -161,6 +161,7 @@ public class Radiation implements Listener {
         @Override
         public void run() {
             Server server = plugin.getServer();
+            Iterable<PotionEffect> effects = config.effects();
 
             server.getOnlinePlayers().forEach(player -> {
                 if (matcher.test(player)) {
@@ -171,7 +172,10 @@ public class Radiation implements Listener {
                     boolean cancel = event.isCancelled();
 
                     if (!cancel) {
-                        this.hurt(player);
+                        for (PotionEffect effect : effects) {
+                            player.addPotionEffect(effect, true);
+                        }
+
                         addAffectedPlayer(player, showBossBar);
                         return;
                     }
@@ -185,11 +189,6 @@ public class Radiation implements Listener {
                     removeAffectedPlayer(player, true);
                 }
             });
-        }
-
-        private void hurt(Player player) {
-            Objects.requireNonNull(player, "player");
-            config.effects().forEach(effect -> player.addPotionEffect(effect, true));
         }
     }
 
