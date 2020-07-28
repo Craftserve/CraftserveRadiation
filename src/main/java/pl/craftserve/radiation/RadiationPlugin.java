@@ -43,10 +43,13 @@ import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -155,7 +158,10 @@ public final class RadiationPlugin extends JavaPlugin {
         this.display.enable();
 
         this.activeRadiations.forEach((id, radiation) -> radiation.enable());
-        logger.info("Loaded and enabled {} radiation(s): {}", this.activeRadiations.size(), String.join(", ", this.activeRadiations.keySet()));
+
+        Set<String> radiationIds = new TreeSet<>(Comparator.naturalOrder());
+        radiationIds.addAll(this.activeRadiations.keySet());
+        logger.info("Loaded and enabled {} radiation(s): {}", this.activeRadiations.size(), String.join(", ", radiationIds));
 
         this.craftserveListener.enable();
         this.metricsHandler.start();
