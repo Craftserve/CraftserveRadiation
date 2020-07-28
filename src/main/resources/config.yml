@@ -39,42 +39,46 @@ lugols-iodine-potion:
   # Colorable broadcast message shown when a player consumes the potion, leave empty for no message.
   drink-message: '{0}&c drank {1}.'
 
-# Radiation zone options.
-radiation:
-  # Boss bar shown on the screen when a player is in the zone.
-  bar:
-    # Colorable title shown on the bar.
-    title: 'Radiation Zone'
-    # Color of the bar, possible values:
-    # blue, green, pink, purple, red, white, yellow
-    color: red
-    # Style of the bar, possible values:
-    # segmented_6, segmented_10, segmented_12, segmented_20, solid
-    style: solid
-    # Additional effects given for the player, possible values:
-    # create_fog, darken_sky, play_boss_music
-    flags: [darken_sky]
-  # Effects given in the radiation zone.
-  effects:
-    # Name of the effect. List of effect names is available here:
-    # https://minecraft.gamepedia.com/Status_effect#Effect_IDs
-    wither:
-      # Level of the effect, eg. level 5 gives Wither V effect.
-      level: 5
-      # Should this effect produce more, translucent, particles?
-      ambient: false
-      # Does this effect produce particles?
-      has-particles: false
-      # Does this effect give an icon?
-      has-icon: false
-    hunger:
-      # Level of the effect, eg. level 5 gives Wither V effect.
-      level: 1
-      # Should this effect produce more, translucent, particles?
-      ambient: false
-      # Does this effect produce particles?
-      has-particles: false
-      # Does this effect give an icon?
-      has-icon: false
-  # Colorable broadcast message shown when a player enters radiation zone, leave empty for no message/
-  escape-message: '{0}&c has escaped to radiation zone.'
+# Radiation zone options. You can define as many radiation types as you want.
+# Each one must have its own unique identifier, such as "default".
+# Use "radiation-id" flag to declare region a specific radiation type.
+radiations:
+  # The "default" radiation, used when "radiation-id" flag is not set.
+  default:
+    # Boss bar shown on the screen when a player is in the zone.
+    bar:
+      # Colorable title shown on the bar.
+      title: 'Radiation Zone'
+      # Color of the bar, possible values:
+      # blue, green, pink, purple, red, white, yellow
+      color: red
+      # Style of the bar, possible values:
+      # segmented_6, segmented_10, segmented_12, segmented_20, solid
+      style: solid
+      # Additional effects given for the player, possible values:
+      # create_fog, darken_sky, play_boss_music
+      flags: [darken_sky]
+    # Effects given in the radiation zone.
+    effects:
+      # Name of the effect. List of effect names is available here:
+      # https://minecraft.gamepedia.com/Status_effect#Effect_IDs
+      wither:
+        # Level of the effect, eg. level 5 gives Wither V effect.
+        level: 5
+        # Should this effect produce more, translucent, particles?
+        ambient: false
+        # Does this effect produce particles?
+        has-particles: false
+        # Does this effect give an icon?
+        has-icon: false
+      hunger:
+        # Level of the effect, eg. level 5 gives Wither V effect.
+        level: 1
+        # Should this effect produce more, translucent, particles?
+        ambient: false
+        # Does this effect produce particles?
+        has-particles: false
+        # Does this effect give an icon?
+        has-icon: false
+    # Colorable broadcast message shown when a player enters radiation zone, leave empty for no message.
+    escape-message: '{0}&c has escaped to radiation zone.'
