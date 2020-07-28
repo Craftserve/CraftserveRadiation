@@ -44,6 +44,7 @@ lugols-iodine-potion:
 # Use "radiation-type" flag to declare region a specific radiation type.
 radiations:
   # The "default" radiation, used when "radiation-type" flag is not set.
+  # It is recommended to not remove the "default" radiation.
   default:
     # Boss bar shown on the screen when a player is in the zone.
     bar:
