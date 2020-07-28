@@ -245,6 +245,8 @@ public class Radiation implements Listener {
     //
 
     public static class Config {
+        public static final String DEFAULT_ID = "default";
+
         private final String id;
         private final BarConfig bar;
         private final Iterable<PotionEffect> effects;
@@ -264,10 +266,8 @@ public class Radiation implements Listener {
                 section = new MemoryConfiguration();
             }
 
-            this.id = section.getName();
-            if (this.id.isEmpty()) {
-                throw new InvalidConfigurationException("Empty radiation ID given.");
-            }
+            String id = section.getName();
+            this.id = id.isEmpty() ? DEFAULT_ID : id;
 
             try {
                 this.bar = new BarConfig(section.getConfigurationSection("bar"));

@@ -281,9 +281,15 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         if (protocol < 2) {
-            ConfigurationSection standardRadiation = section.getConfigurationSection("radiation");
+            MemoryConfiguration defaultRadiation = new MemoryConfiguration();
+
+            ConfigurationSection oldRadiation = section.getConfigurationSection("radiation");
+            if (oldRadiation != null) {
+                oldRadiation.getValues(true).forEach(defaultRadiation::set);
+            }
+
             section.set("radiation", null); // remove old section
-            section.set("radiation.standard", standardRadiation);
+            section.set("radiations.default", defaultRadiation);
         }
 
         return true;
@@ -382,11 +388,11 @@ public final class RadiationPlugin extends JavaPlugin {
 
                 ConfigurationSection radiationsSection = Objects.requireNonNull(section.getConfigurationSection("radiations"));
                 for (String key : radiationsSection.getKeys(false)) {
-                    if (!section.isConfigurationSection(key)) {
+                    if (!radiationsSection.isConfigurationSection(key)) {
                         throw new InvalidConfigurationException(key + " is not a radiation section.");
                     }
 
-                    radiations.add(new Radiation.Config(section.getConfigurationSection(key)));
+                    radiations.add(new Radiation.Config(radiationsSection.getConfigurationSection(key)));
                 }
 
                 this.radiations = Collections.unmodifiableCollection(radiations);
