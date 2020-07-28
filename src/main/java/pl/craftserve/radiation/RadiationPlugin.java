@@ -155,6 +155,7 @@ public final class RadiationPlugin extends JavaPlugin {
         this.display.enable();
 
         this.activeRadiations.forEach((id, radiation) -> radiation.enable());
+        logger.info("Loaded and enabled {} radiation(s): {}", this.activeRadiations.size(), String.join(", ", this.activeRadiations.keySet()));
 
         this.craftserveListener.enable();
         this.metricsHandler.start();
