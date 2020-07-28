@@ -20,6 +20,7 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.StringFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
@@ -41,8 +42,15 @@ import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -55,17 +63,20 @@ public final class RadiationPlugin extends JavaPlugin {
         return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
     }
 
-    private static final int CURRENT_PROTOCOL_VERSION = 1;
+    private static final int CURRENT_PROTOCOL_VERSION = 2;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
+    private static final Flag<String> RADIATION_TYPE_FLAG = new StringFlag("radiation-type");
 
     private Flag<Boolean> radiationFlag;
+    private Flag<String> radiationTypeFlag;
     private RadiationNmsBridge radiationNmsBridge;
     private Config config;
 
     private LugolsIodineEffect effect;
     private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
-    private Radiation radiation;
+
+    private final Map<String, Radiation> activeRadiations = new LinkedHashMap<>();
 
     private CraftserveListener craftserveListener;
     private MetricsHandler metricsHandler;
@@ -91,7 +102,8 @@ public final class RadiationPlugin extends JavaPlugin {
             throw new IllegalStateException("Flag registry is not set! Plugin must shut down...");
         }
 
-        this.radiationFlag = this.getOrCreateRadiationFlag(flagRegistry);
+        this.radiationFlag = this.getOrCreateFlag(flagRegistry, RADIATION_FLAG);
+        this.radiationTypeFlag = this.getOrCreateFlag(flagRegistry, RADIATION_TYPE_FLAG);
     }
 
     @Override
@@ -133,9 +145,12 @@ public final class RadiationPlugin extends JavaPlugin {
         this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
         this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
 
-        // Standard radiation based on WorldGuard flag matcher.
-        Radiation.Matcher radiationFlagMatcher = new Radiation.FlagMatcher(this.radiationFlag);
-        this.radiation = new Radiation(this, radiationFlagMatcher, this.config.radiation());
+        for (Radiation.Config radiationConfig : this.config.radiations()) {
+            String id = radiationConfig.id();
+            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag, this.radiationTypeFlag, Collections.singleton(id));
+
+            this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
+        }
 
         RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);
         radiationCommandHandler.register(this.getCommand("radiation"));
@@ -146,7 +161,12 @@ public final class RadiationPlugin extends JavaPlugin {
         this.effect.enable();
         this.potion.enable(this.radiationNmsBridge);
         this.display.enable();
-        this.radiation.enable();
+
+        this.activeRadiations.forEach((id, radiation) -> radiation.enable());
+
+        Set<String> radiationIds = new TreeSet<>(Comparator.naturalOrder());
+        radiationIds.addAll(this.activeRadiations.keySet());
+        logger.info("Loaded and enabled {} radiation(s): {}", this.activeRadiations.size(), String.join(", ", radiationIds));
 
         this.craftserveListener.enable();
         this.metricsHandler.start();
@@ -161,9 +181,9 @@ public final class RadiationPlugin extends JavaPlugin {
             this.craftserveListener.disable();
         }
 
-        if (this.radiation != null) {
-            this.radiation.disable();
-        }
+        this.activeRadiations.forEach((id, radiation) -> radiation.disable());
+        this.activeRadiations.clear();
+
         if (this.display != null) {
             this.display.disable();
         }
@@ -179,6 +199,10 @@ public final class RadiationPlugin extends JavaPlugin {
         return this.radiationFlag;
     }
 
+    public Flag<String> getRadiationTypeFlag() {
+        return this.radiationTypeFlag;
+    }
+
     public Config getPluginConfig() {
         return this.config;
     }
@@ -191,20 +215,21 @@ public final class RadiationPlugin extends JavaPlugin {
         return this.potion;
     }
 
-    public Radiation getStandardRadiation() {
-        return this.radiation;
+    public Map<String, Radiation> getActiveRadiations() {
+        return Collections.unmodifiableMap(this.activeRadiations);
     }
 
     @SuppressWarnings("unchecked")
-    private Flag<Boolean> getOrCreateRadiationFlag(FlagRegistry flagRegistry) {
+    private <T> Flag<T> getOrCreateFlag(FlagRegistry flagRegistry, Flag<T> defaultFlag) {
         Objects.requireNonNull(flagRegistry, "flagRegistry");
+        Objects.requireNonNull(defaultFlag, "defaultFlag");
 
-        Flag<Boolean> flag = (Flag<Boolean>) flagRegistry.get(RADIATION_FLAG.getName());
+        Flag<T> flag = (Flag<T>) flagRegistry.get(defaultFlag.getName());
         if (flag != null) {
             return flag;
         }
 
-        flag = RADIATION_FLAG;
+        flag = defaultFlag;
         flagRegistry.register(flag);
         return flag;
     }
@@ -271,6 +296,18 @@ public final class RadiationPlugin extends JavaPlugin {
             section.set("lugols-iodine-potion.color", null);
         }
 
+        if (protocol < 2) {
+            MemoryConfiguration defaultRadiation = new MemoryConfiguration();
+
+            ConfigurationSection oldRadiation = section.getConfigurationSection("radiation");
+            if (oldRadiation != null) {
+                oldRadiation.getValues(true).forEach(defaultRadiation::set);
+            }
+
+            section.set("radiation", null); // remove old section
+            section.set("radiations.default", defaultRadiation);
+        }
+
         return true;
     }
 
@@ -333,12 +370,12 @@ public final class RadiationPlugin extends JavaPlugin {
     public static class Config {
         private final BarConfig lugolsIodineDisplay;
         private final LugolsIodinePotion.Config lugolsIodinePotion;
-        private final Radiation.Config radiation;
+        private final Iterable<Radiation.Config> radiations;
 
-        public Config(BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Radiation.Config radiation) {
+        public Config(BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Iterable<Radiation.Config> radiations) {
             this.lugolsIodineDisplay = Objects.requireNonNull(lugolsIodineDisplay, "lugolsIodineDisplay");
             this.lugolsIodinePotion = Objects.requireNonNull(lugolsIodinePotion, "lugolsIodinePotion");
-            this.radiation = Objects.requireNonNull(radiation, "radiation");
+            this.radiations = Objects.requireNonNull(radiations, "radiations");
         }
 
         public Config(ConfigurationSection section) throws InvalidConfigurationException {
@@ -359,7 +396,22 @@ public final class RadiationPlugin extends JavaPlugin {
             }
 
             try {
-                this.radiation = new Radiation.Config(section.getConfigurationSection("radiation"));
+                if (!section.isConfigurationSection("radiations")) {
+                    throw new InvalidConfigurationException("Missing radiations section.");
+                }
+
+                List<Radiation.Config> radiations = new ArrayList<>();
+
+                ConfigurationSection radiationsSection = Objects.requireNonNull(section.getConfigurationSection("radiations"));
+                for (String key : radiationsSection.getKeys(false)) {
+                    if (!radiationsSection.isConfigurationSection(key)) {
+                        throw new InvalidConfigurationException(key + " is not a radiation section.");
+                    }
+
+                    radiations.add(new Radiation.Config(radiationsSection.getConfigurationSection(key)));
+                }
+
+                this.radiations = Collections.unmodifiableCollection(radiations);
             } catch (InvalidConfigurationException e) {
                 throw new InvalidConfigurationException("Could not parse radiation section.", e);
             }
@@ -373,8 +425,8 @@ public final class RadiationPlugin extends JavaPlugin {
             return this.lugolsIodinePotion;
         }
 
-        public Radiation.Config radiation() {
-            return this.radiation;
+        public Iterable<Radiation.Config> radiations() {
+            return this.radiations;
         }
     }
 }

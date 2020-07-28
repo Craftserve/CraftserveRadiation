@@ -16,8 +16,10 @@
 
 package pl.craftserve.radiation;
 
+import com.google.common.base.Preconditions;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
@@ -120,10 +122,12 @@ public class Radiation implements Listener {
 
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
-        logger.info("{} has escaped to radiation zone at {}", player.getName(), player.getLocation());
+
+        String radiationId = this.config.id();
+        logger.info("{} has escaped to \"{}\" radiation zone at {}", player.getName(), radiationId, player.getLocation());
 
         this.config.escapeMessage().ifPresent(rawMessage -> {
-            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, radiationId);
             for (Player online : this.plugin.getServer().getOnlinePlayers()) {
                 if (online.canSee(player)) {
                     online.sendMessage(message);
@@ -217,13 +221,17 @@ public class Radiation implements Listener {
     }
 
     /**
-     * Tests if the given flag matches radiation.
+     * Tests if the given flags matches the radiation IDs.
      */
     public static class FlagMatcher implements WorldGuardMatcher {
-        private final Flag<Boolean> flag;
+        private final Flag<Boolean> isRadioactiveFlag;
+        private final Flag<String> radiationTypeFlag;
+        private final Set<String> acceptedRadiationTypes;
 
-        public FlagMatcher(Flag<Boolean> flag) {
-            this.flag = Objects.requireNonNull(flag, "flag");
+        public FlagMatcher(Flag<Boolean> isRadioactiveFlag, Flag<String> radiationTypeFlag, Set<String> acceptedRadiationTypes) {
+            this.isRadioactiveFlag = Objects.requireNonNull(isRadioactiveFlag, "isRadioactiveFlag");
+            this.radiationTypeFlag = Objects.requireNonNull(radiationTypeFlag, "radiationTypeFlag");
+            this.acceptedRadiationTypes = Objects.requireNonNull(acceptedRadiationTypes, "acceptedRadiationTypes");
         }
 
         @Override
@@ -231,9 +239,19 @@ public class Radiation implements Listener {
             Location location = BukkitAdapter.adapt(player.getLocation());
             location = location.setY(Math.max(0, Math.min(255, location.getY())));
             ApplicableRegionSet regions = regionContainer.createQuery().getApplicableRegions(location);
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 
-            Boolean value = regions.queryValue(WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
-            return value != null && value;
+            Boolean radioactive = regions.queryValue(localPlayer, this.isRadioactiveFlag);
+            if (radioactive == null || !radioactive) {
+                return false;
+            }
+
+            String radiationId = regions.queryValue(localPlayer, this.radiationTypeFlag);
+            if (radiationId == null || radiationId.isEmpty()) {
+                radiationId = Config.DEFAULT_ID;
+            }
+
+            return this.acceptedRadiationTypes.contains(radiationId);
         }
     }
 
@@ -242,20 +260,29 @@ public class Radiation implements Listener {
     //
 
     public static class Config {
+        public static final String DEFAULT_ID = "default";
+
+        private final String id;
         private final BarConfig bar;
         private final Iterable<PotionEffect> effects;
         private final String escapeMessage;
 
-        public Config(BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+        public Config(String id, BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+            this.id = Objects.requireNonNull(id, "id");
             this.bar = Objects.requireNonNull(bar, "bar");
             this.effects = Objects.requireNonNull(effects, "effects");
             this.escapeMessage = escapeMessage;
+
+            Preconditions.checkArgument(!id.isEmpty(), "id cannot be empty");
         }
 
         public Config(ConfigurationSection section) throws InvalidConfigurationException {
             if (section == null) {
                 section = new MemoryConfiguration();
             }
+
+            String id = section.getName();
+            this.id = id.isEmpty() ? DEFAULT_ID : id;
 
             try {
                 this.bar = new BarConfig(section.getConfigurationSection("bar"));
@@ -297,6 +324,10 @@ public class Radiation implements Listener {
 
             String escapeMessage = RadiationPlugin.colorize(section.getString("escape-message"));
             this.escapeMessage = escapeMessage != null && !escapeMessage.isEmpty() ? escapeMessage : null;
+        }
+
+        public String id() {
+            return this.id;
         }
 
         public BarConfig bar() {
