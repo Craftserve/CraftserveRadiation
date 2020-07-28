@@ -121,10 +121,12 @@ public class Radiation implements Listener {
 
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
-        logger.info("{} has escaped to radiation zone at {}", player.getName(), player.getLocation());
+
+        String radiationId = this.config.id();
+        logger.info("{} has escaped to \"{}\" radiation zone at {}", player.getName(), radiationId, player.getLocation());
 
         this.config.escapeMessage().ifPresent(rawMessage -> {
-            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET);
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, radiationId);
             for (Player online : this.plugin.getServer().getOnlinePlayers()) {
                 if (online.canSee(player)) {
                     online.sendMessage(message);
