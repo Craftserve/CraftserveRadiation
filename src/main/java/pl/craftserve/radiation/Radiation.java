@@ -158,7 +158,7 @@ public class Radiation implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        removeAffectedPlayer(event.getPlayer(), true);
+        this.removeAffectedPlayer(event.getPlayer(), true);
     }
 
     class Task extends BukkitRunnable {
