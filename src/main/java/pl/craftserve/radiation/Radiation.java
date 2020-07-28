@@ -16,6 +16,7 @@
 
 package pl.craftserve.radiation;
 
+import com.google.common.base.Preconditions;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
@@ -242,19 +243,28 @@ public class Radiation implements Listener {
     //
 
     public static class Config {
+        private final String id;
         private final BarConfig bar;
         private final Iterable<PotionEffect> effects;
         private final String escapeMessage;
 
-        public Config(BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+        public Config(String id, BarConfig bar, Iterable<PotionEffect> effects, String escapeMessage) {
+            this.id = Objects.requireNonNull(id, "id");
             this.bar = Objects.requireNonNull(bar, "bar");
             this.effects = Objects.requireNonNull(effects, "effects");
             this.escapeMessage = escapeMessage;
+
+            Preconditions.checkArgument(!id.isEmpty(), "id cannot be empty");
         }
 
         public Config(ConfigurationSection section) throws InvalidConfigurationException {
             if (section == null) {
                 section = new MemoryConfiguration();
+            }
+
+            this.id = section.getName();
+            if (this.id.isEmpty()) {
+                throw new InvalidConfigurationException("Empty radiation ID given.");
             }
 
             try {
@@ -297,6 +307,10 @@ public class Radiation implements Listener {
 
             String escapeMessage = RadiationPlugin.colorize(section.getString("escape-message"));
             this.escapeMessage = escapeMessage != null && !escapeMessage.isEmpty() ? escapeMessage : null;
+        }
+
+        public String id() {
+            return this.id;
         }
 
         public BarConfig bar() {
