@@ -140,6 +140,10 @@ public class Radiation implements Listener {
         return Collections.unmodifiableSet(this.affectedPlayers);
     }
 
+    public Matcher getMatcher() {
+        return this.matcher;
+    }
+
     public boolean removeAffectedPlayer(Player player, boolean removeBossBar) {
         Objects.requireNonNull(player, "player");
 
