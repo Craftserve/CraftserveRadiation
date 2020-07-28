@@ -65,10 +65,10 @@ public final class RadiationPlugin extends JavaPlugin {
 
     private static final int CURRENT_PROTOCOL_VERSION = 2;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
-    private static final Flag<String> RADIATION_ID_FLAG = new StringFlag("radiation-id");
+    private static final Flag<String> RADIATION_TYPE_FLAG = new StringFlag("radiation-type");
 
     private Flag<Boolean> radiationFlag;
-    private Flag<String> radiationIdFlag;
+    private Flag<String> radiationTypeFlag;
     private RadiationNmsBridge radiationNmsBridge;
     private Config config;
 
@@ -103,7 +103,7 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         this.radiationFlag = this.getOrCreateFlag(flagRegistry, RADIATION_FLAG);
-        this.radiationIdFlag = this.getOrCreateFlag(flagRegistry, RADIATION_ID_FLAG);
+        this.radiationTypeFlag = this.getOrCreateFlag(flagRegistry, RADIATION_TYPE_FLAG);
     }
 
     @Override
@@ -147,7 +147,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
         for (Radiation.Config radiationConfig : this.config.radiations()) {
             String id = radiationConfig.id();
-            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag, this.radiationIdFlag, Collections.singleton(id));
+            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag, this.radiationTypeFlag, Collections.singleton(id));
 
             this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
         }
@@ -199,8 +199,8 @@ public final class RadiationPlugin extends JavaPlugin {
         return this.radiationFlag;
     }
 
-    public Flag<String> getRadiationIdFlag() {
-        return this.radiationIdFlag;
+    public Flag<String> getRadiationTypeFlag() {
+        return this.radiationTypeFlag;
     }
 
     public Config getPluginConfig() {

@@ -225,13 +225,13 @@ public class Radiation implements Listener {
      */
     public static class FlagMatcher implements WorldGuardMatcher {
         private final Flag<Boolean> isRadioactiveFlag;
-        private final Flag<String> radiationIdFlag;
-        private final Set<String> acceptedRadiationIds;
+        private final Flag<String> radiationTypeFlag;
+        private final Set<String> acceptedRadiationTypes;
 
-        public FlagMatcher(Flag<Boolean> isRadioactiveFlag, Flag<String> radiationIdFlag, Set<String> acceptedRadiationIds) {
+        public FlagMatcher(Flag<Boolean> isRadioactiveFlag, Flag<String> radiationTypeFlag, Set<String> acceptedRadiationTypes) {
             this.isRadioactiveFlag = Objects.requireNonNull(isRadioactiveFlag, "isRadioactiveFlag");
-            this.radiationIdFlag = Objects.requireNonNull(radiationIdFlag, "radiationIdFlag");
-            this.acceptedRadiationIds = Objects.requireNonNull(acceptedRadiationIds, "acceptedRadiationIds");
+            this.radiationTypeFlag = Objects.requireNonNull(radiationTypeFlag, "radiationTypeFlag");
+            this.acceptedRadiationTypes = Objects.requireNonNull(acceptedRadiationTypes, "acceptedRadiationTypes");
         }
 
         @Override
@@ -246,12 +246,12 @@ public class Radiation implements Listener {
                 return false;
             }
 
-            String radiationId = regions.queryValue(localPlayer, this.radiationIdFlag);
+            String radiationId = regions.queryValue(localPlayer, this.radiationTypeFlag);
             if (radiationId == null || radiationId.isEmpty()) {
                 radiationId = Config.DEFAULT_ID;
             }
 
-            return this.acceptedRadiationIds.contains(radiationId);
+            return this.acceptedRadiationTypes.contains(radiationId);
         }
     }
 

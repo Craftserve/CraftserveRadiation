@@ -41,9 +41,9 @@ lugols-iodine-potion:
 
 # Radiation zone options. You can define as many radiation types as you want.
 # Each one must have its own unique identifier, such as "default".
-# Use "radiation-id" flag to declare region a specific radiation type.
+# Use "radiation-type" flag to declare region a specific radiation type.
 radiations:
-  # The "default" radiation, used when "radiation-id" flag is not set.
+  # The "default" radiation, used when "radiation-type" flag is not set.
   default:
     # Boss bar shown on the screen when a player is in the zone.
     bar:
