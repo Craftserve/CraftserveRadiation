@@ -124,7 +124,7 @@ public class Radiation implements Listener {
         Objects.requireNonNull(player, "player");
 
         String radiationId = this.config.id();
-        logger.info(player.getName() + " has escaped to \"" + radiationId + "\" radiation zone at " + player.getLocation());
+        logger.info(player.getName() + " has entered \"" + radiationId + "\" radiation zone at " + player.getLocation());
 
         this.config.enterMessage().ifPresent(rawMessage -> {
             String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, radiationId);
