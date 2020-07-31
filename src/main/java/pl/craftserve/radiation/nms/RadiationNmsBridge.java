@@ -24,7 +24,7 @@ import pl.craftserve.radiation.LugolsIodinePotion;
 import java.util.Objects;
 
 public interface RadiationNmsBridge {
-    void registerLugolsIodinePotion(NamespacedKey potionKey, final LugolsIodinePotion.Config.Recipe config);
+    void registerLugolsIodinePotion(NamespacedKey potionKey, LugolsIodinePotion.Config.Recipe config);
 
     void unregisterLugolsIodinePotion(NamespacedKey potionKey);
 

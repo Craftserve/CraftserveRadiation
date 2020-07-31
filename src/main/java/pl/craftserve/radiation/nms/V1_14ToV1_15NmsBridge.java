@@ -42,7 +42,7 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
 
     private final Object potionRegistry;
 
-    public V1_14ToV1_15NmsBridge(final String version) {
+    public V1_14ToV1_15NmsBridge(String version) {
         Objects.requireNonNull(version, "version");
 
         try {
@@ -80,7 +80,7 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
     }
 
     @Override
-    public void registerLugolsIodinePotion(final NamespacedKey potionKey, final LugolsIodinePotion.Config.Recipe config) {
+    public void registerLugolsIodinePotion(NamespacedKey potionKey, LugolsIodinePotion.Config.Recipe config) {
         Objects.requireNonNull(potionKey, "potionKey");
         Objects.requireNonNull(config, "config");
 
@@ -99,12 +99,12 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
             registerBrewingRecipe.setAccessible(true);
             registerBrewingRecipe.invoke(null, basePotion, ingredient, potion);
         } catch (Exception e) {
-            logger.error("Could not handle reflective operation.", e);
+            logger.log(Level.SEVERE, "Could not handle reflective operation.", e);
         }
     }
 
     @Override
-    public void unregisterLugolsIodinePotion(final NamespacedKey potionKey) {
+    public void unregisterLugolsIodinePotion(NamespacedKey potionKey) {
         // todo unregister potion and brewing recipe
     }
 }
