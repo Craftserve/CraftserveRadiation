@@ -37,8 +37,6 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 
@@ -53,9 +51,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class RadiationPlugin extends JavaPlugin {
-    static final Logger logger = LoggerFactory.getLogger(RadiationPlugin.class);
+    static final Logger logger = Logger.getLogger(RadiationPlugin.class.getName());
 
     private static final char COLOR_CODE = '&';
 
@@ -83,7 +83,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
     private RadiationNmsBridge initializeNmsBridge() {
         String serverVersion = RadiationNmsBridge.getServerVersion(this.getServer());
-        logger.info("Detected server version: {}", serverVersion);
+        logger.info("Detected server version: " + serverVersion);
 
         switch (serverVersion) {
             case "v1_14_R1":
@@ -114,7 +114,7 @@ public final class RadiationPlugin extends JavaPlugin {
         try {
             this.radiationNmsBridge = this.initializeNmsBridge();
         } catch (Exception e) {
-            logger.error("Failed to launch {}. Plausibly your server version is unsupported.", this.getName(), e);
+            logger.log(Level.SEVERE, "Failed to launch " + this.getName() + ". Plausibly your server version is unsupported.", e);
             this.setEnabled(false);
             return;
         }
@@ -132,7 +132,7 @@ public final class RadiationPlugin extends JavaPlugin {
         try {
             this.config = new Config(config);
         } catch (InvalidConfigurationException e) {
-            logger.error("Could not load configuration file.", e);
+            logger.log(Level.SEVERE, "Could not load configuration file.", e);
             this.setEnabled(false);
             return;
         }
@@ -166,7 +166,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
         Set<String> radiationIds = new TreeSet<>(Comparator.naturalOrder());
         radiationIds.addAll(this.activeRadiations.keySet());
-        logger.info("Loaded and enabled {} radiation(s): {}", this.activeRadiations.size(), String.join(", ", radiationIds));
+        logger.info("Loaded and enabled " + this.activeRadiations.size() + " radiation(s): " + String.join(", ", radiationIds));
 
         this.craftserveListener.enable();
         this.metricsHandler.start();
@@ -242,7 +242,7 @@ public final class RadiationPlugin extends JavaPlugin {
         Objects.requireNonNull(section, "section");
 
         if (protocol > CURRENT_PROTOCOL_VERSION) {
-            logger.error("Your configuration file's protocol version \"{}\" is invalid. Are you trying to load it using a newer version of the plugin?", protocol);
+            logger.severe("Your configuration file's protocol version \"" + protocol + "\" is invalid. Are you trying to load it using a newer version of the plugin?");
             return false;
         }
 
@@ -279,7 +279,7 @@ public final class RadiationPlugin extends JavaPlugin {
             AtomicBoolean logged = new AtomicBoolean();
             section.getStringList("world-names").forEach(worldName -> {
                 if (logged.compareAndSet(false, true)) {
-                    logger.warn(
+                    logger.warning(
                             "Enabling in legacy region-name mode! The plugin will try to automatically migrate to the new flag-based system.\n" +
                             "If everything went fine please completely remove your config.yml file.");
                 }
@@ -336,7 +336,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
         World world = this.getServer().getWorld(worldName);
         if (world == null) {
-            logger.warn(error + "the world is unloaded.");
+            logger.warning(error + "the world is unloaded.");
             return;
         }
 
@@ -346,19 +346,19 @@ public final class RadiationPlugin extends JavaPlugin {
 
         RegionContainer regionContainer = matcher.getRegionContainer();
         if (regionContainer == null) {
-            logger.warn(error + "region container is not present.");
+            logger.warning(error + "region container is not present.");
             return;
         }
 
         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
         if (regionManager == null) {
-            logger.warn(error + "region manager for the world is not present.");
+            logger.warning(error + "region manager for the world is not present.");
             return;
         }
 
         ProtectedRegion legacyRegion = regionManager.getRegion(regionId);
         if (legacyRegion == null) {
-            logger.warn(error + "legacy region is not present.");
+            logger.warning(error + "legacy region is not present.");
             return;
         }
 
@@ -372,7 +372,7 @@ public final class RadiationPlugin extends JavaPlugin {
         }
 
         global.setFlag(this.radiationFlag, true);
-        logger.info("Region {} in world {} has been successfully migrated to the new flag-based system.", regionId, worldName);
+        logger.info("Region " + regionId + " in world " + worldName + " has been successfully migrated to the new flag-based system.");
     }
 
     //

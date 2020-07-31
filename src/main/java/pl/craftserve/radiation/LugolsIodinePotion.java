@@ -40,8 +40,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.text.MessageFormat;
@@ -54,9 +52,11 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
-    static final Logger logger = LoggerFactory.getLogger(LugolsIodinePotion.class);
+    static final Logger logger = Logger.getLogger(LugolsIodinePotion.class.getName());
 
     private static final byte TRUE = 1;
 
@@ -147,7 +147,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         Objects.requireNonNull(player, "player");
 
         String name = this.config.name();
-        logger.info("{} has consumed {} with a duration of {} seconds", player.getName(), name, durationSeconds);
+        logger.info(player.getName() + " has consumed " + name + " with a duration of " + durationSeconds + " seconds");
 
         this.config.drinkMessage().ifPresent(rawMessage -> {
             String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, name);

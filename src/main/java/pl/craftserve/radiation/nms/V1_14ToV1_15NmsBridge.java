@@ -18,17 +18,17 @@ package pl.craftserve.radiation.nms;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
-    static final Logger logger = LoggerFactory.getLogger(V1_14ToV1_15NmsBridge.class);
+    static final Logger logger = Logger.getLogger(V1_14ToV1_15NmsBridge.class.getName());
 
     private final Class<?> itemClass;
     private final Class<?> iRegistryClass;
