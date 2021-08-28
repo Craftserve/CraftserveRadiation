@@ -39,6 +39,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
+import pl.craftserve.radiation.nms.V1_17_R1NmsBridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,6 +93,8 @@ public final class RadiationPlugin extends JavaPlugin {
             case "v1_16_R2":
             case "v1_16_R3":
                 return new V1_14ToV1_15NmsBridge(serverVersion);
+            case "v1_17_R1":
+                return new V1_17_R1NmsBridge(serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
