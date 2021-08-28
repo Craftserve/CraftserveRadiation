@@ -149,12 +149,12 @@ public final class RadiationPlugin extends JavaPlugin {
 
         for (Radiation.Config radiationConfig : this.config.radiations()) {
             String id = radiationConfig.id();
-            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag, this.radiationTypeFlag, Collections.singleton(id));
+            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationNmsBridge, this.radiationFlag, this.radiationTypeFlag, Collections.singleton(id));
 
             this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
         }
 
-        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);
+        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationNmsBridge, this.radiationFlag, this.potion);
         radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);

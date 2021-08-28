@@ -37,6 +37,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,13 +50,15 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private static final String REGION_ID = "safe_from_radiation";
     private static final String GLOBAL_REGION_ID = "__global__";
 
+    private RadiationNmsBridge nmsBridge;
     private final Flag<Boolean> flag;
     private final Radiation.WorldGuardMatcher worldGuardMatcher = (player, regionContainer) -> {
         throw new UnsupportedOperationException();
     };
     private final LugolsIodinePotion potion;
 
-    public RadiationCommandHandler(Flag<Boolean> flag, LugolsIodinePotion potion) {
+    public RadiationCommandHandler(RadiationNmsBridge nmsBridge, Flag<Boolean> flag, LugolsIodinePotion potion) {
+        this.nmsBridge = Objects.requireNonNull(nmsBridge, "nmsBridge");
         this.flag = Objects.requireNonNull(flag, "flag");
         this.potion = potion;
     }
@@ -135,7 +138,8 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
         Objects.requireNonNull(container, "container");
         Objects.requireNonNull(regionId, "regionId");
 
-        World world = BukkitAdapter.adapt(player.getWorld());
+        org.bukkit.World bukkitWorld = player.getWorld();
+        World world = BukkitAdapter.adapt(bukkitWorld);
         RegionManager regionManager = container.get(world);
         if (regionManager == null) {
             player.sendMessage(ChatColor.RED + "Sorry, region manager for world " + world.getName() + " is not currently accessible.");
@@ -143,17 +147,21 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
         }
 
         BlockVector3 origin = BukkitAdapter.asBlockVector(player.getLocation());
-        this.define(regionManager, this.createCuboid(regionId, origin, radius));
+        this.define(regionManager, this.createCuboid(bukkitWorld, regionId, origin, radius));
         this.flagGlobal(regionManager, true);
         return true;
     }
 
-    private ProtectedCuboidRegion createCuboid(String regionId, BlockVector3 origin, int radius) {
+    private ProtectedCuboidRegion createCuboid(org.bukkit.World bukkitWorld, String regionId, BlockVector3 origin, int radius) {
+        Objects.requireNonNull(bukkitWorld, "bukkitWorld");
         Objects.requireNonNull(regionId, "regionId");
         Objects.requireNonNull(origin, "origin");
 
-        BlockVector3 min = origin.subtract(radius, 0, radius).withY(0);
-        BlockVector3 max = origin.add(radius, 0, radius).withY(255);
+        int minY = this.nmsBridge.getMinWorldHeight(bukkitWorld);
+        int maxY = bukkitWorld.getMaxHeight();
+
+        BlockVector3 min = origin.subtract(radius, 0, radius).withY(minY);
+        BlockVector3 max = origin.add(radius, 0, radius).withY(maxY);
         return new ProtectedCuboidRegion(regionId, min, max);
     }
 

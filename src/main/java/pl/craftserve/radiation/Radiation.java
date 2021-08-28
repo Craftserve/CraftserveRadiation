@@ -28,6 +28,7 @@ import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -42,6 +43,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -54,7 +56,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Radiation implements Listener {
@@ -228,11 +229,13 @@ public class Radiation implements Listener {
      * Tests if the given flags matches the radiation IDs.
      */
     public static class FlagMatcher implements WorldGuardMatcher {
+        private final RadiationNmsBridge nmsBridge;
         private final Flag<Boolean> isRadioactiveFlag;
         private final Flag<String> radiationTypeFlag;
         private final Set<String> acceptedRadiationTypes;
 
-        public FlagMatcher(Flag<Boolean> isRadioactiveFlag, Flag<String> radiationTypeFlag, Set<String> acceptedRadiationTypes) {
+        public FlagMatcher(RadiationNmsBridge nmsBridge, Flag<Boolean> isRadioactiveFlag, Flag<String> radiationTypeFlag, Set<String> acceptedRadiationTypes) {
+            this.nmsBridge = Objects.requireNonNull(nmsBridge, "nmsBridge");
             this.isRadioactiveFlag = Objects.requireNonNull(isRadioactiveFlag, "isRadioactiveFlag");
             this.radiationTypeFlag = Objects.requireNonNull(radiationTypeFlag, "radiationTypeFlag");
             this.acceptedRadiationTypes = Objects.requireNonNull(acceptedRadiationTypes, "acceptedRadiationTypes");
@@ -240,8 +243,13 @@ public class Radiation implements Listener {
 
         @Override
         public boolean test(Player player, RegionContainer regionContainer) {
-            Location location = BukkitAdapter.adapt(player.getLocation());
-            location = location.setY(Math.max(0, Math.min(255, location.getY())));
+            org.bukkit.Location bukkitLocation = player.getLocation();
+            World world = player.getWorld();
+            int minY = this.nmsBridge.getMinWorldHeight(world);
+            int maxY = world.getMaxHeight();
+
+            Location location = BukkitAdapter.adapt(bukkitLocation);
+            location = location.setY(Math.max(minY, Math.min(maxY, location.getY())));
             ApplicableRegionSet regions = regionContainer.createQuery().getApplicableRegions(location);
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
 
