@@ -8,8 +8,11 @@ import pl.craftserve.radiation.LugolsIodinePotion;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +31,8 @@ public class V1_17_R1NmsBridge implements RadiationNmsBridge {
     private final Method minHeightMethod;
 
     private final Object potionRegistry;
+
+    private final Map<UUID, Integer> minWorldHeightMap = new HashMap<>();
 
     public V1_17_R1NmsBridge(String version) {
         Objects.requireNonNull(version, "version");
@@ -83,11 +88,15 @@ public class V1_17_R1NmsBridge implements RadiationNmsBridge {
 
     @Override
     public int getMinWorldHeight(World bukkitWorld) {
-        try {
-            return (int) this.minHeightMethod.invoke(bukkitWorld);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            logger.log(Level.SEVERE, "Could not handle min world height on world '" + bukkitWorld.getName() + "'.", e);
-            return 0;
-        }
+        Objects.requireNonNull(bukkitWorld, "bukkitWorld");
+
+        return this.minWorldHeightMap.computeIfAbsent(bukkitWorld.getUID(), worldId -> {
+            try {
+                return (int) this.minHeightMethod.invoke(bukkitWorld);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                logger.log(Level.SEVERE, "Could not handle min world height on world '" + bukkitWorld.getName() + "' ('" + worldId + "').", e);
+                return 0;
+            }
+        });
     }
 }
