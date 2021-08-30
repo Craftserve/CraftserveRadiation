@@ -63,7 +63,7 @@ public class V1_17_R1NmsBridge implements RadiationNmsBridge {
         Objects.requireNonNull(config, "config");
 
         try {
-            String basePotionName = config.basePotion().name().toLowerCase().toLowerCase(Locale.ROOT);
+            String basePotionName = config.basePotion().name().toLowerCase(Locale.ROOT);
             Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, basePotionName));
             Object ingredient = this.getItem.invoke(null, config.ingredient());
 
