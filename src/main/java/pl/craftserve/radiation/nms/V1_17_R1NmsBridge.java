@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class V1_17_R1NmsBridge implements RadiationNmsBridge {
-    static final Logger logger = Logger.getLogger(V1_14ToV1_15NmsBridge.class.getName());
+    static final Logger logger = Logger.getLogger(V1_17_R1NmsBridge.class.getName());
 
     private final Class<?> itemClass;
     private final Class<?> iRegistryClass;
