@@ -39,6 +39,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
+import pl.craftserve.radiation.nms.V1_17_R1NmsBridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,6 +93,8 @@ public final class RadiationPlugin extends JavaPlugin {
             case "v1_16_R2":
             case "v1_16_R3":
                 return new V1_14ToV1_15NmsBridge(serverVersion);
+            case "v1_17_R1":
+                return new V1_17_R1NmsBridge(serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
@@ -149,12 +152,12 @@ public final class RadiationPlugin extends JavaPlugin {
 
         for (Radiation.Config radiationConfig : this.config.radiations()) {
             String id = radiationConfig.id();
-            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationFlag, this.radiationTypeFlag, Collections.singleton(id));
+            Radiation.Matcher matcher = new Radiation.FlagMatcher(this.radiationNmsBridge, this.radiationFlag, this.radiationTypeFlag, Collections.singleton(id));
 
             this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
         }
 
-        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationFlag, this.potion);
+        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationNmsBridge, this.radiationFlag, this.potion);
         radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);

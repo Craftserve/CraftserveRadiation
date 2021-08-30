@@ -18,6 +18,7 @@ package pl.craftserve.radiation.nms;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.lang.reflect.Array;
@@ -106,5 +107,10 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
     @Override
     public void unregisterLugolsIodinePotion(NamespacedKey potionKey) {
         // todo unregister potion and brewing recipe
+    }
+
+    @Override
+    public int getMinWorldHeight(World bukkitWorld) {
+        return 0;
     }
 }

@@ -19,6 +19,7 @@ package pl.craftserve.radiation.nms;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.apache.commons.lang.StringUtils;
+import org.bukkit.World;
 import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.util.Objects;
@@ -27,6 +28,8 @@ public interface RadiationNmsBridge {
     void registerLugolsIodinePotion(NamespacedKey potionKey, LugolsIodinePotion.Config.Recipe config);
 
     void unregisterLugolsIodinePotion(NamespacedKey potionKey);
+
+    int getMinWorldHeight(World bukkitWorld);
 
     static String getServerVersion(Server server) {
         Objects.requireNonNull(server, "server");
