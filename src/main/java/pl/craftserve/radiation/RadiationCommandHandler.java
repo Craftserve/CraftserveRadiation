@@ -50,7 +50,7 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private static final String REGION_ID = "safe_from_radiation";
     private static final String GLOBAL_REGION_ID = "__global__";
 
-    private RadiationNmsBridge nmsBridge;
+    private final RadiationNmsBridge nmsBridge;
     private final Flag<Boolean> flag;
     private final Radiation.WorldGuardMatcher worldGuardMatcher = (player, regionContainer) -> {
         throw new UnsupportedOperationException();
