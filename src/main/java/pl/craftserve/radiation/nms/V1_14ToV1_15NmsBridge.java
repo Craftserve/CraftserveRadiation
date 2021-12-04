@@ -24,6 +24,7 @@ import pl.craftserve.radiation.LugolsIodinePotion;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,8 +87,12 @@ public class V1_14ToV1_15NmsBridge implements RadiationNmsBridge {
         Objects.requireNonNull(config, "config");
 
         try {
-            Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, config.basePotion().name().toLowerCase()));
+            String basePotionName = config.basePotion().name().toLowerCase(Locale.ROOT);
+            Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, basePotionName));
+            Objects.requireNonNull(basePotion, "basePotion not found");
+
             Object ingredient = this.getItem.invoke(null, config.ingredient());
+            Objects.requireNonNull(ingredient, "ingredient not found");
 
             Object registryType = this.iRegistryClass.getDeclaredField("POTION").get(null);
             Object mobEffectArray = Array.newInstance(this.mobEffectClass, 0);

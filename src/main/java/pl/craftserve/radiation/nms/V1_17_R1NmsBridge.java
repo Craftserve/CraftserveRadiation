@@ -81,7 +81,10 @@ public class V1_17_R1NmsBridge implements RadiationNmsBridge {
         try {
             String basePotionName = config.basePotion().name().toLowerCase(Locale.ROOT);
             Object basePotion = this.getPotion.invoke(this.potionRegistry, this.newMinecraftKey.invoke(null, basePotionName));
+            Objects.requireNonNull(basePotion, "basePotion not found");
+
             Object ingredient = this.getItem.invoke(null, config.ingredient());
+            Objects.requireNonNull(ingredient, "ingredient not found");
 
             Object mobEffectArray = Array.newInstance(this.mobEffectClass, 0);
             Object newPotion = this.potionRegistryClass.getConstructor(mobEffectArray.getClass()).newInstance(mobEffectArray);
