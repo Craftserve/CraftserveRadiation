@@ -161,7 +161,7 @@ public final class RadiationPlugin extends JavaPlugin {
         radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);
-        this.metricsHandler = new MetricsHandler(this, server, this.effect, this.potion);
+        this.metricsHandler = new MetricsHandler(this, server, this.radiationNmsBridge.getClass());
 
         this.effect.enable();
         this.potion.enable(this.radiationNmsBridge);

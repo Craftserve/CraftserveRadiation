@@ -234,7 +234,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         return potionMeta;
     }
 
-    private String formatDuration(Duration duration) {
+    public String formatDuration(Duration duration) {
         Objects.requireNonNull(duration, "duration");
 
         long seconds = duration.getSeconds();

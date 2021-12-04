@@ -16,15 +16,18 @@
 
 package pl.craftserve.radiation;
 
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
+import org.bstats.charts.SingleLineChart;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.Plugin;
 import pl.craftserve.metrics.pluginmetricslite.MetricSubmitEvent;
 import pl.craftserve.metrics.pluginmetricslite.MetricsLite;
+import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.util.Map;
 import java.util.Objects;
@@ -34,18 +37,16 @@ import java.util.logging.Logger;
 public class MetricsHandler implements Listener  {
     static final Logger logger = Logger.getLogger(MetricsHandler.class.getName());
 
-    private final Plugin plugin;
+    private static final int B_STATS_PLUGIN_ID = 13487;
+
+    private final RadiationPlugin plugin;
     private final Server server;
+    private final Class<? extends RadiationNmsBridge> nmsBridgeClass;
 
-    private final LugolsIodineEffect effect;
-    private final LugolsIodinePotion potion;
-
-    public MetricsHandler(Plugin plugin, Server server, LugolsIodineEffect effect, LugolsIodinePotion potion) {
+    public MetricsHandler(RadiationPlugin plugin, Server server, Class<? extends RadiationNmsBridge> nmsBridgeClass) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.server = Objects.requireNonNull(server, "server");
-
-        this.effect = Objects.requireNonNull(effect, "effect");
-        this.potion = Objects.requireNonNull(potion, "potion");
+        this.nmsBridgeClass = Objects.requireNonNull(nmsBridgeClass, "nmsBridgeClass");
     }
 
     public void start() {
@@ -56,6 +57,9 @@ public class MetricsHandler implements Listener  {
         } catch (Throwable throwable) {
             logger.log(Level.SEVERE, "Could not start metrics.", throwable);
         }
+
+        Metrics metrics = new Metrics(this.plugin, B_STATS_PLUGIN_ID);
+        this.setupBStatsCharts(metrics);
     }
 
     public void stop() {
@@ -68,13 +72,46 @@ public class MetricsHandler implements Listener  {
         HandlerList.unregisterAll(this);
     }
 
+    private void setupBStatsCharts(Metrics metrics) {
+        Objects.requireNonNull(metrics, "metrics");
+
+        metrics.addCustomChart(new SimplePie("lugols_iodine_duration", () -> {
+            LugolsIodinePotion potionHandler = this.plugin.getPotionHandler();
+            return potionHandler.formatDuration(potionHandler.getDuration());
+        }));
+        metrics.addCustomChart(new SingleLineChart("lugols_iodione_affected_count", () -> {
+            LugolsIodineEffect effectHandler = this.plugin.getEffectHandler();
+            return (int) this.server.getOnlinePlayers().stream()
+                    .filter(player -> effectHandler.getEffect(player) != null)
+                    .count();
+        }));
+        metrics.addCustomChart(new SimplePie("active_radiations_count", () -> {
+            return Integer.toString(this.plugin.getActiveRadiations().size());
+        }));
+        metrics.addCustomChart(new SingleLineChart("active_radiations_affected_count", () -> {
+            return this.plugin.getActiveRadiations().values().stream()
+                    .mapToInt(radiation -> radiation.getAffectedPlayers().size())
+                    .sum();
+        }));
+        metrics.addCustomChart(new SimplePie("nms_bridge_class", this.nmsBridgeClass::getName));
+    }
+
     @EventHandler(priority = EventPriority.NORMAL)
     public void onMetricSubmit(MetricSubmitEvent event) {
+        LugolsIodineEffect effectHandler = this.plugin.getEffectHandler();
+        LugolsIodinePotion potionHandler = this.plugin.getPotionHandler();
+        Map<String, Radiation> activeRadiations = this.plugin.getActiveRadiations();
+
         Map<NamespacedKey, Object> data = event.getData();
-        data.put(this.key("lugols_iodine_duration"), this.potion.getDuration().getSeconds());
+        data.put(this.key("lugols_iodine_duration"), potionHandler.getDuration().getSeconds());
         data.put(this.key("lugols_iodione_affected_count"), (int) this.server.getOnlinePlayers().stream()
-                .filter(player -> this.effect.getEffect(player) != null)
+                .filter(player -> effectHandler.getEffect(player) != null)
                 .count());
+        data.put(this.key("active_radiations_count"), activeRadiations.size());
+        data.put(this.key("active_radiations_affected_count"), activeRadiations.values().stream()
+                .mapToInt(radiation -> radiation.getAffectedPlayers().size())
+                .sum());
+        data.put(this.key("nms_bridge_class"), this.nmsBridgeClass.getName());
     }
 
     private NamespacedKey key(String key) {
