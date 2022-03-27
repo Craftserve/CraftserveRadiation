@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Aleksander Jagiełło <themolkapl@gmail.com>
+ * Copyright 2022 Aleksander Jagiełło <themolkapl@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.bukkit.World;
 import pl.craftserve.radiation.LugolsIodinePotion;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -32,14 +33,16 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class V1_18_R1NmsBridge implements RadiationNmsBridge {
-    static final Logger logger = Logger.getLogger(V1_18_R1NmsBridge.class.getName());
+public class V1_18_R2NmsBridge implements RadiationNmsBridge {
+    static final Logger logger = Logger.getLogger(V1_18_R2NmsBridge.class.getName());
 
     private final Class<?> itemClass;
     private final Class<?> iRegistryClass;
     private final Class<?> mobEffectClass;
     private final Class<?> potionRegistryClass;
     private final Class<?> potionBrewerClass;
+
+    private final Field isRegistryMaterialsFrozen;
 
     private final Method getItem;
     private final Method newMinecraftKey;
@@ -50,7 +53,7 @@ public class V1_18_R1NmsBridge implements RadiationNmsBridge {
 
     private final Map<UUID, Integer> minWorldHeightMap = new HashMap<>();
 
-    public V1_18_R1NmsBridge(String version) {
+    public V1_18_R2NmsBridge(String version) {
         Objects.requireNonNull(version, "version");
 
         try {
@@ -60,16 +63,19 @@ public class V1_18_R1NmsBridge implements RadiationNmsBridge {
             this.potionRegistryClass = Class.forName("net.minecraft.world.item.alchemy.PotionRegistry"); // PotionRegistry -> Potion
             this.potionBrewerClass = Class.forName("net.minecraft.world.item.alchemy.PotionBrewer"); // PotionBrewer -> PotionBrewing
 
+            Class<?> registryMaterialsClass = Class.forName("net.minecraft.core.RegistryMaterials"); // RegistryMaterials -> MappedRegistry
+            this.isRegistryMaterialsFrozen = registryMaterialsClass.getDeclaredField("bL"); // bL -> frozen
+
             Class<?> craftMagicNumbers = Class.forName("org.bukkit.craftbukkit." + version + ".util.CraftMagicNumbers");
             this.getItem = craftMagicNumbers.getMethod("getItem", Material.class);
-            this.minHeightMethod = World.class.getMethod("getMinHeight");
+            this.minHeightMethod = Class.forName("org.bukkit.generator.WorldInfo").getMethod("getMinHeight");
 
             Class<?> minecraftKey = Class.forName("net.minecraft.resources.MinecraftKey"); // MinecraftKey -> ResourceLocation
             this.newMinecraftKey = minecraftKey.getMethod("a", String.class); // a -> tryParse
-            this.potionRegistry = this.iRegistryClass.getDeclaredField("ab").get(null); // W -> POTION_REGISTRY
+            this.potionRegistry = this.iRegistryClass.getDeclaredField("Y").get(null); // Y -> POTION_REGISTRY
             this.getPotion = this.potionRegistry.getClass().getMethod("a", minecraftKey); // a -> get
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize 1.18 bridge", e);
+            throw new RuntimeException("Failed to initialize 1.18.2 bridge", e);
         }
     }
 
@@ -90,6 +96,8 @@ public class V1_18_R1NmsBridge implements RadiationNmsBridge {
             Object newPotion = this.potionRegistryClass.getConstructor(mobEffectArray.getClass()).newInstance(mobEffectArray);
 
             Method registerMethod = this.iRegistryClass.getDeclaredMethod("a", this.iRegistryClass, String.class, Object.class); // a -> register
+            this.isRegistryMaterialsFrozen.setAccessible(true);
+            this.isRegistryMaterialsFrozen.set(this.potionRegistry, false);
             Object potion = registerMethod.invoke(null, this.potionRegistry, potionKey.getKey(), newPotion);
 
             Method registerBrewingRecipe = this.potionBrewerClass.getDeclaredMethod("a", this.potionRegistryClass, this.itemClass, this.potionRegistryClass); // a -> addMix
