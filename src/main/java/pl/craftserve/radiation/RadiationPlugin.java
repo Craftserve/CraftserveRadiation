@@ -42,6 +42,7 @@ import pl.craftserve.radiation.nms.V1_14ToV1_15NmsBridge;
 import pl.craftserve.radiation.nms.V1_17_R1NmsBridge;
 import pl.craftserve.radiation.nms.V1_18_R1NmsBridge;
 import pl.craftserve.radiation.nms.V1_18_R2NmsBridge;
+import pl.craftserve.radiation.nms.V1_19_R1NmsBridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
