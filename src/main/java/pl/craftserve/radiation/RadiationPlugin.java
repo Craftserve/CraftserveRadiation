@@ -101,6 +101,8 @@ public final class RadiationPlugin extends JavaPlugin {
                 return new V1_18_R1NmsBridge(serverVersion);
             case "v1_18_R2":
                 return new V1_18_R2NmsBridge(serverVersion);
+            case "v1_19_R1":
+                return new V1_19_R1NmsBridge(serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
