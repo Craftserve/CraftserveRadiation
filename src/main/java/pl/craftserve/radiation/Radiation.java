@@ -104,14 +104,6 @@ public class Radiation implements Listener {
         Objects.requireNonNull(player, "player");
 
         boolean ok = this.affectedPlayers.add(player.getUniqueId());
-        if (ok && addBossBar) {
-            boolean contains = this.bossBar.getPlayers().contains(player);
-
-            if (!contains) {
-                this.addBossBar(player);
-                this.broadcastEscape(player);
-            }
-        }
 
         return ok;
     }
@@ -180,17 +172,22 @@ public class Radiation implements Listener {
                     boolean showBossBar = event.shouldShowWarning();
                     boolean cancel = event.isCancelled();
 
+                    boolean contains = bossBar.getPlayers().contains(player);
+
                     if (!cancel) {
                         for (PotionEffect effect : effects) {
                             player.addPotionEffect(effect, true);
                         }
 
                         addAffectedPlayer(player, showBossBar);
-                        return;
                     }
 
                     if (showBossBar) {
                         addBossBar(player);
+
+                        if (!contains) {
+                            broadcastEscape(player);
+                        }
                     } else {
                         removeBossBar(player);
                     }
