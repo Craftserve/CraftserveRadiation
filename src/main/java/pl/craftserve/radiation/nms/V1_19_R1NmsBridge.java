@@ -48,7 +48,8 @@ public class V1_19_R1NmsBridge implements RadiationNmsBridge {
             this.potionBrewerClass = Class.forName("net.minecraft.world.item.alchemy.PotionBrewer"); // PotionBrewer -> PotionBrewing
 
             Class<?> registryMaterialsClass = Class.forName("net.minecraft.core.RegistryMaterials"); // RegistryMaterials -> MappedRegistry
-            this.isRegistryMaterialsFrozen = registryMaterialsClass.getDeclaredField("ca"); // bL -> frozen
+            this.isRegistryMaterialsFrozen = registryMaterialsClass.getDeclaredField("ca"); // ca -> frozen
+
 
             Class<?> craftMagicNumbers = Class.forName("org.bukkit.craftbukkit." + version + ".util.CraftMagicNumbers");
             this.getItem = craftMagicNumbers.getMethod("getItem", Material.class);
