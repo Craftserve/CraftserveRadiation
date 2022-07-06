@@ -103,9 +103,7 @@ public class Radiation implements Listener {
     public boolean addAffectedPlayer(Player player, boolean addBossBar) {
         Objects.requireNonNull(player, "player");
 
-        boolean ok = this.affectedPlayers.add(player.getUniqueId());
-
-        return ok;
+        return this.affectedPlayers.add(player.getUniqueId());
     }
 
     private void addBossBar(Player player) {
