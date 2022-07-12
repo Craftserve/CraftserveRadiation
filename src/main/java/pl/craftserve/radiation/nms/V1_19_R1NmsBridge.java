@@ -61,7 +61,7 @@ public class V1_19_R1NmsBridge implements RadiationNmsBridge {
 
             this.getPotion = this.potionRegistry.getClass().getMethod("a", minecraftKey); // a -> get
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize 1.18.2 bridge", e);
+            throw new RuntimeException("Failed to initialize 1.19 bridge", e);
         }
     }
 
