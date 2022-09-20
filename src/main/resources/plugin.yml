@@ -12,7 +12,7 @@ commands:
     description: 'Plugin commands.'
     aliases: ['radiacja']
     permission: 'craftserveradiation.radiation'
-    usage: '/radiation <safe|potion>'
+    usage: '/radiation <safe <radius>|potion <identifier>>'
 
 permissions:
   craftserveradiation.*:

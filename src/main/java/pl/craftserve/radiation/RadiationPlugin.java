@@ -67,7 +67,7 @@ public final class RadiationPlugin extends JavaPlugin {
         return input == null ? null : ChatColor.translateAlternateColorCodes(COLOR_CODE, input);
     }
 
-    private static final int CURRENT_PROTOCOL_VERSION = 3;
+    private static final int CURRENT_PROTOCOL_VERSION = 4;
     private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
     private static final Flag<String> RADIATION_TYPE_FLAG = new StringFlag("radiation-type");
 
@@ -77,9 +77,9 @@ public final class RadiationPlugin extends JavaPlugin {
     private Config config;
 
     private LugolsIodineEffect effect;
-    private LugolsIodinePotion potion;
     private LugolsIodineDisplay display;
 
+    private final Map<String, LugolsIodinePotion> potions = new LinkedHashMap<>();
     private final Map<String, Radiation> activeRadiations = new LinkedHashMap<>();
 
     private CraftserveListener craftserveListener;
@@ -156,8 +156,11 @@ public final class RadiationPlugin extends JavaPlugin {
         //
 
         this.effect = new LugolsIodineEffect(this);
-        this.potion = new LugolsIodinePotion(this, this.effect, this.config.lugolsIodinePotion());
-        this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineDisplay());
+        this.display = new LugolsIodineDisplay(this, this.effect, this.config.lugolsIodineBars());
+
+        for (LugolsIodinePotion.Config potionConfig : this.config.lugolsIodinePotions()) {
+            this.potions.put(potionConfig.id(), new LugolsIodinePotion(this, this.effect, potionConfig));
+        }
 
         for (Radiation.Config radiationConfig : this.config.radiations()) {
             String id = radiationConfig.id();
@@ -166,18 +169,21 @@ public final class RadiationPlugin extends JavaPlugin {
             this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
         }
 
-        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationNmsBridge, this.radiationFlag, this.potion);
+        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationNmsBridge, this.radiationFlag, this.potions::get);
         radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);
         this.metricsHandler = new MetricsHandler(this, server, this.radiationNmsBridge.getClass());
 
         this.effect.enable();
-        this.potion.enable(this.radiationNmsBridge);
         this.display.enable();
 
-        this.activeRadiations.forEach((id, radiation) -> radiation.enable());
+        this.potions.forEach((id, potion) -> potion.enable(this.radiationNmsBridge));
+        Set<String> potionIds = new TreeSet<>(Comparator.naturalOrder());
+        potionIds.addAll(this.potions.keySet());
+        logger.info("Loaded and enabled " + this.potions.size() + " lugol's iodine potion(s): " + String.join(", ", potionIds));
 
+        this.activeRadiations.forEach((id, radiation) -> radiation.enable());
         Set<String> radiationIds = new TreeSet<>(Comparator.naturalOrder());
         radiationIds.addAll(this.activeRadiations.keySet());
         logger.info("Loaded and enabled " + this.activeRadiations.size() + " radiation(s): " + String.join(", ", radiationIds));
@@ -198,11 +204,11 @@ public final class RadiationPlugin extends JavaPlugin {
         this.activeRadiations.forEach((id, radiation) -> radiation.disable());
         this.activeRadiations.clear();
 
+        this.potions.forEach((id, potion) -> potion.disable(this.radiationNmsBridge));
+        this.potions.clear();
+
         if (this.display != null) {
             this.display.disable();
-        }
-        if (this.potion != null) {
-            this.potion.disable(this.radiationNmsBridge);
         }
         if (this.effect != null) {
             this.effect.disable();
@@ -225,8 +231,8 @@ public final class RadiationPlugin extends JavaPlugin {
         return this.effect;
     }
 
-    public LugolsIodinePotion getPotionHandler() {
-        return this.potion;
+    public Map<String, LugolsIodinePotion> getPotionHandlers() {
+        return Collections.unmodifiableMap(this.potions);
     }
 
     public Map<String, Radiation> getActiveRadiations() {
@@ -256,7 +262,7 @@ public final class RadiationPlugin extends JavaPlugin {
         Objects.requireNonNull(section, "section");
 
         if (protocol > CURRENT_PROTOCOL_VERSION) {
-            logger.severe("Your configuration file's protocol version \"" + protocol + "\" is invalid. Are you trying to load it using a newer version of the plugin?");
+            logger.severe("Your configuration file's protocol version \"" + protocol + "\" is invalid. Configuration file's protocol version is newer than this plugin version can understand. Are you trying to load it using an older version of the plugin?");
             return false;
         }
 
@@ -334,6 +340,31 @@ public final class RadiationPlugin extends JavaPlugin {
             }
         }
 
+        if (protocol < 4) {
+            // lugols-iodine-bars
+            MemoryConfiguration defaultBar = new MemoryConfiguration();
+
+            ConfigurationSection oldBar = section.getConfigurationSection("lugols-iodine-bar");
+            if (oldBar != null) {
+                oldBar.getValues(true).forEach(defaultBar::set);
+            }
+
+            section.set("lugols-iodine-bar", null); // remove old section
+            section.set("lugols-iodine-bars.default", defaultBar);
+
+            // lugols-iodine-potions
+            MemoryConfiguration defaultPotion = new MemoryConfiguration();
+            defaultPotion.set("radiation_ids", Collections.emptyList());
+
+            ConfigurationSection oldPotion = section.getConfigurationSection("lugols-iodine-potion");
+            if (oldPotion != null) {
+                oldPotion.getValues(true).forEach(defaultPotion::set);
+            }
+
+            section.set("lugols-iodine-potion", null); // remove old section
+            section.set("lugols-iodine-potions.default", defaultPotion);
+        }
+
         return true;
     }
 
@@ -394,13 +425,13 @@ public final class RadiationPlugin extends JavaPlugin {
     //
 
     public static class Config {
-        private final BarConfig lugolsIodineDisplay;
-        private final LugolsIodinePotion.Config lugolsIodinePotion;
+        private final Map<String, BarConfig> lugolsIodineBars;
+        private final Iterable<LugolsIodinePotion.Config> lugolsIodinePotions;
         private final Iterable<Radiation.Config> radiations;
 
-        public Config(BarConfig lugolsIodineDisplay, LugolsIodinePotion.Config lugolsIodinePotion, Iterable<Radiation.Config> radiations) {
-            this.lugolsIodineDisplay = Objects.requireNonNull(lugolsIodineDisplay, "lugolsIodineDisplay");
-            this.lugolsIodinePotion = Objects.requireNonNull(lugolsIodinePotion, "lugolsIodinePotion");
+        public Config(Map<String, BarConfig> lugolsIodineBars, Iterable<LugolsIodinePotion.Config> lugolsIodinePotions, Iterable<Radiation.Config> radiations) {
+            this.lugolsIodineBars = Objects.requireNonNull(lugolsIodineBars, "lugolsIodineBars");
+            this.lugolsIodinePotions = Objects.requireNonNull(lugolsIodinePotions, "lugolsIodinePotions");
             this.radiations = Objects.requireNonNull(radiations, "radiations");
         }
 
@@ -410,15 +441,45 @@ public final class RadiationPlugin extends JavaPlugin {
             }
 
             try {
-                this.lugolsIodineDisplay = new BarConfig(section.getConfigurationSection("lugols-iodine-bar"));
+                if (!section.isConfigurationSection("lugols-iodine-bars")) {
+                    throw new InvalidConfigurationException("Missing lugols-iodine-bars section.");
+                }
+
+                Map<String, BarConfig> bars = new LinkedHashMap<>();
+
+                ConfigurationSection barsSection = Objects.requireNonNull(section.getConfigurationSection("lugols-iodine-bars"));
+                for (String key : barsSection.getKeys(false)) {
+                    if (!barsSection.isConfigurationSection(key)) {
+                        throw new InvalidConfigurationException(key + " is not a lugols-iodine-bar sectino.");
+                    }
+
+                    bars.put(key, new BarConfig(section.getConfigurationSection(key)));
+                }
+
+                this.lugolsIodineBars = Collections.unmodifiableMap(bars);
             } catch (InvalidConfigurationException e) {
-                throw new InvalidConfigurationException("Could not parse lugols-iodine-bar section.", e);
+                throw new InvalidConfigurationException("Could not parse lugols-iodine-bars section.", e);
             }
 
             try {
-                this.lugolsIodinePotion = new LugolsIodinePotion.Config(section.getConfigurationSection("lugols-iodine-potion"));
+                if (!section.isConfigurationSection("lugols-iodine-potions")) {
+                    throw new InvalidConfigurationException("Missing lugols-iodine-potions section.");
+                }
+
+                List<LugolsIodinePotion.Config> potions = new ArrayList<>();
+
+                ConfigurationSection potionsSection = Objects.requireNonNull(section.getConfigurationSection("lugols-iodine-potions"));
+                for (String key : potionsSection.getKeys(false)) {
+                    if (!potionsSection.isConfigurationSection(key)) {
+                        throw new InvalidConfigurationException(key + " is not a lugols-iodine-potion section.");
+                    }
+
+                    potions.add(new LugolsIodinePotion.Config(section.getConfigurationSection(key)));
+                }
+
+                this.lugolsIodinePotions = Collections.unmodifiableCollection(potions);
             } catch (InvalidConfigurationException e) {
-                throw new InvalidConfigurationException("Could not parse lugols-iodine-potion section.", e);
+                throw new InvalidConfigurationException("Could not parse lugols-iodine-potions section.", e);
             }
 
             try {
@@ -439,16 +500,16 @@ public final class RadiationPlugin extends JavaPlugin {
 
                 this.radiations = Collections.unmodifiableCollection(radiations);
             } catch (InvalidConfigurationException e) {
-                throw new InvalidConfigurationException("Could not parse radiation section.", e);
+                throw new InvalidConfigurationException("Could not parse radiations section.", e);
             }
         }
 
-        public BarConfig lugolsIodineDisplay() {
-            return this.lugolsIodineDisplay;
+        public Map<String, BarConfig> lugolsIodineBars() {
+            return this.lugolsIodineBars;
         }
 
-        public LugolsIodinePotion.Config lugolsIodinePotion() {
-            return this.lugolsIodinePotion;
+        public Iterable<LugolsIodinePotion.Config> lugolsIodinePotions() {
+            return this.lugolsIodinePotions;
         }
 
         public Iterable<Radiation.Config> radiations() {
