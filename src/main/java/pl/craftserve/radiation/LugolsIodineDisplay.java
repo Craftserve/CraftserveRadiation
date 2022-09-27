@@ -31,7 +31,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -128,15 +127,12 @@ public class LugolsIodineDisplay implements Listener {
             Objects.requireNonNull(player, "player");
             Objects.requireNonNull(effectList, "effectList");
 
-            List<LugolsIodineEffect.Effect> toAdd = new ArrayList<>();
-            existingLoop : for (Map.Entry<String, BossBar> entry : new LinkedHashSet<>(this.bossBarMap.entrySet())) {
+            existingLoop: for (Map.Entry<String, BossBar> entry : new LinkedHashSet<>(this.bossBarMap.entrySet())) {
                 String effectId = entry.getKey();
 
                 for (LugolsIodineEffect.Effect next : effectList) {
                     if (next.getId().equals(effectId)) {
                         // We found matching effect in effectList, retain it.
-                        effectList.remove(next);
-                        toAdd.add(next);
                         continue existingLoop;
                     }
                 }
@@ -145,11 +141,7 @@ public class LugolsIodineDisplay implements Listener {
                 this.remove(player, effectId);
             }
 
-            // Left effects in effectList will be added.
-            toAdd.addAll(effectList);
-
-            this.bossBarMap.clear();
-            for (LugolsIodineEffect.Effect newEffect : toAdd) {
+            for (LugolsIodineEffect.Effect newEffect : effectList) {
                 this.add(player, newEffect);
             }
         }
