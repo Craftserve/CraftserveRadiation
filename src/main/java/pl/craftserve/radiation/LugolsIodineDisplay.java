@@ -45,8 +45,9 @@ public class LugolsIodineDisplay implements Listener {
     static final Logger logger = Logger.getLogger(LugolsIodineDisplay.class.getName());
 
     private static final String DEFAULT_BAR_ID = "default";
+    /** Fallback config when a silly user removes the default one. */
     private static final BarConfig DEFAULT_BAR_CONFIG = new BarConfig(
-            "Lugol''s Iodine Effect",
+            "Lugol's Iodine Effect",
             BarColor.GREEN,
             BarStyle.SEGMENTED_20,
             new BarFlag[0]);
