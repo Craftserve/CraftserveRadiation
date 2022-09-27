@@ -104,7 +104,7 @@ public class LugolsIodineDisplay implements Listener {
                 return this.createBossBar(effect);
             });
 
-            bossBar.setProgress((double) (effect.getTimeLeft().toMillis() / effect.getInitialDuration().toMillis()));
+            bossBar.setProgress((double) effect.getTimeLeft().toMillis() / effect.getInitialDuration().toMillis());
             bossBar.addPlayer(player);
             return bossBar;
         }
