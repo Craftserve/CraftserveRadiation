@@ -347,7 +347,7 @@ public class LugolsIodineEffect implements Listener {
                 try {
                     this.tick(onlinePlayer, TASK_PERIOD);
                 } catch (IOException e) {
-                    logger.log(Level.SEVERE, "Could not tick effects on player '" + onlinePlayer.getName() + "'.");
+                    logger.log(Level.SEVERE, "Could not tick effects on player '" + onlinePlayer.getName() + "'.", e);
                 }
             }
         }
