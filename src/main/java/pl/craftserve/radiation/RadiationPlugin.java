@@ -453,7 +453,7 @@ public final class RadiationPlugin extends JavaPlugin {
                         throw new InvalidConfigurationException(key + " is not a lugols-iodine-bar sectino.");
                     }
 
-                    bars.put(key, new BarConfig(section.getConfigurationSection(key)));
+                    bars.put(key, new BarConfig(barsSection.getConfigurationSection(key)));
                 }
 
                 this.lugolsIodineBars = Collections.unmodifiableMap(bars);
