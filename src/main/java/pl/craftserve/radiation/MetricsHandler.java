@@ -79,7 +79,7 @@ public class MetricsHandler implements Listener  {
     private void setupBStatsCharts(Metrics metrics) {
         Objects.requireNonNull(metrics, "metrics");
 
-        metrics.addCustomChart(new SimplePie("lugols_iodine_count", () -> {
+        metrics.addCustomChart(new SimplePie("lugols_iodine_potion_count", () -> {
             return Integer.toString(this.plugin.getPotionHandlers().size());
         }));
 
