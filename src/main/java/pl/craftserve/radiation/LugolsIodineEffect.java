@@ -33,9 +33,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -211,30 +211,33 @@ public class LugolsIodineEffect implements Listener {
         }
 
         byte[] bytes = container.get(this.entityStorageKey, PersistentDataType.BYTE_ARRAY);
+        if (bytes == null || bytes.length == 0) {
+            return Collections.emptyList();
+        }
 
         List<Effect> effectList = new ArrayList<>();
         try (Closer closer = Closer.create()) {
             ByteArrayInputStream byteArrayInputStream = closer.register(new ByteArrayInputStream(bytes));
-            ObjectInputStream objectInputStream = closer.register(new ObjectInputStream(byteArrayInputStream));
+            DataInputStream dataInputStream = closer.register(new DataInputStream(byteArrayInputStream));
 
-            short protocolVersion = objectInputStream.readShort();
+            short protocolVersion = dataInputStream.readShort();
             if (protocolVersion != 0) {
                 throw new IOException("Unsupported protocol version: " + protocolVersion);
             }
 
-            int effectListCount = objectInputStream.readInt();
+            int effectListCount = dataInputStream.readInt();
             for (int i = 0; i < effectListCount; i++) {
-                String id = objectInputStream.readUTF();
-                Duration initialDuration = Duration.ofMillis(objectInputStream.readLong());
-                Duration timeLeft = Duration.ofMillis(objectInputStream.readLong());
+                String id = dataInputStream.readUTF();
+                Duration initialDuration = Duration.ofMillis(dataInputStream.readLong());
+                Duration timeLeft = Duration.ofMillis(dataInputStream.readLong());
                 List<String> radiationIds = null;
 
-                int radiationIdCount = objectInputStream.readInt();
+                int radiationIdCount = dataInputStream.readInt();
                 for (int j = 0; j < radiationIdCount; j++) {
                     if (radiationIds == null) {
                         radiationIds = new ArrayList<>();
                     }
-                    radiationIds.add(objectInputStream.readUTF());
+                    radiationIds.add(dataInputStream.readUTF());
                 }
 
                 effectList.add(new Effect(id, initialDuration, timeLeft, radiationIds));
@@ -255,22 +258,22 @@ public class LugolsIodineEffect implements Listener {
         byte[] bytes;
         try (Closer closer = Closer.create()) {
             ByteArrayOutputStream byteArrayOutputStream = closer.register(new ByteArrayOutputStream());
-            ObjectOutputStream objectOutputStream = closer.register(new ObjectOutputStream(byteArrayOutputStream));
+            DataOutputStream dataOutputStream = closer.register(new DataOutputStream(byteArrayOutputStream));
 
-            objectOutputStream.writeShort(0); // protocol version, for future changes
-            objectOutputStream.writeInt(effectList.size());
+            dataOutputStream.writeShort(0); // protocol version, for future changes
+            dataOutputStream.writeInt(effectList.size());
 
             for (Effect effect : effectList) {
-                objectOutputStream.writeUTF(effect.id);
-                objectOutputStream.writeLong(effect.initialDuration.toMillis());
-                objectOutputStream.writeLong(effect.timeLeft.toMillis());
+                dataOutputStream.writeUTF(effect.id);
+                dataOutputStream.writeLong(effect.initialDuration.toMillis());
+                dataOutputStream.writeLong(effect.timeLeft.toMillis());
 
                 if (effect.radiationIds == null) {
-                    objectOutputStream.writeInt(0);
+                    dataOutputStream.writeInt(0);
                 } else {
-                    objectOutputStream.writeInt(effect.radiationIds.size());
+                    dataOutputStream.writeInt(effect.radiationIds.size());
                     for (String radiationId : effect.radiationIds) {
-                        objectOutputStream.writeUTF(radiationId);
+                        dataOutputStream.writeUTF(radiationId);
                     }
                 }
             }
