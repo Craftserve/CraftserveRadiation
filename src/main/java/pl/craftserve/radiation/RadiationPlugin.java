@@ -169,7 +169,9 @@ public final class RadiationPlugin extends JavaPlugin {
             this.activeRadiations.put(id, new Radiation(this, matcher, radiationConfig));
         }
 
-        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationNmsBridge, this.radiationFlag, this.potions::get);
+        RadiationCommandHandler radiationCommandHandler = new RadiationCommandHandler(this.radiationNmsBridge, this.radiationFlag, this.potions::get, () -> {
+            return this.potions.values().spliterator();
+        });
         radiationCommandHandler.register(this.getCommand("radiation"));
 
         this.craftserveListener = new CraftserveListener(this);

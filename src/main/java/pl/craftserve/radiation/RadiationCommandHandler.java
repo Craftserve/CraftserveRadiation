@@ -44,11 +44,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Spliterator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     static final Logger logger = Logger.getLogger(RadiationCommandHandler.class.getName());
@@ -62,11 +65,14 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
         throw new UnsupportedOperationException();
     };
     private final Function<String, LugolsIodinePotion> potionFinder;
+    private final Supplier<Spliterator<LugolsIodinePotion>> potionLister;
 
-    public RadiationCommandHandler(RadiationNmsBridge nmsBridge, Flag<Boolean> flag, Function<String, LugolsIodinePotion> potionFinder) {
+    public RadiationCommandHandler(RadiationNmsBridge nmsBridge, Flag<Boolean> flag,
+                                   Function<String, LugolsIodinePotion> potionFinder, Supplier<Spliterator<LugolsIodinePotion>> potionLister) {
         this.nmsBridge = Objects.requireNonNull(nmsBridge, "nmsBridge");
         this.flag = Objects.requireNonNull(flag, "flag");
         this.potionFinder = Objects.requireNonNull(potionFinder, "potionFinder");
+        this.potionLister = Objects.requireNonNull(potionLister, "potionLister");
     }
 
     @Override
@@ -93,9 +99,15 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private boolean onPotion(Player sender, String label, String[] args) {
         String usage = ChatColor.RED + "/" + label + " potion <identifier>";
         if (args.length == 1) {
+            String accessiblePotionIds = StreamSupport.stream(this.potionLister.get(), false)
+                    .map(LugolsIodinePotion::getId)
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+
             sender.sendMessage(ChatColor.RED + "Provide lugol's iodine potion identifier in the first argument.");
             sender.sendMessage(usage);
             sender.sendMessage(ChatColor.RED + "Example: /" + label + " potion default");
+            sender.sendMessage(ChatColor.RED + "Accessible potions: " + accessiblePotionIds);
             return true;
         }
 
