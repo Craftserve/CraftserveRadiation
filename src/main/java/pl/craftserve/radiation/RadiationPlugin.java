@@ -356,7 +356,7 @@ public final class RadiationPlugin extends JavaPlugin {
 
             // lugols-iodine-potions
             MemoryConfiguration defaultPotion = new MemoryConfiguration();
-            defaultPotion.set("radiation_ids", Collections.emptyList());
+            defaultPotion.set("radiation-ids", Collections.emptyList());
 
             ConfigurationSection oldPotion = section.getConfigurationSection("lugols-iodine-potion");
             if (oldPotion != null) {
