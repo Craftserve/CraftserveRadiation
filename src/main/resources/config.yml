@@ -1,5 +1,20 @@
 # Indicates version of this file, please don't touch!
 file-protocol-version-dont-touch: 3
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # #                                                                                                         # # # #
+# # # #                                           CraftserveRadiation                                           # # # #
+# # # #                                          ---------------------                                          # # # #
+# # # #                                                                                                         # # # #
+# # # #      ☢  Source Code:     https://github.com/Craftserve/CraftserveRadiation                              # # # #
+# # # #      ☢  Issues:          https://github.com/Craftserve/CraftserveRadiation/issues                       # # # #
+# # # #      ☢  bStats Metrics:  https://bstats.org/plugin/bukkit/CraftserveRadiation/13487                     # # # #
+# # # #      ☢  License:         Apache License 2.0  https://www.apache.org/licenses/LICENSE-2.0                # # # #
+# # # #                                                                                                         # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+>>>>>>> 15e3bd2 (Welcoming title in config.yml)
 
 # Boss bar shown on the screen when player has lugol's iodine effect.
 lugols-iodine-bar:
