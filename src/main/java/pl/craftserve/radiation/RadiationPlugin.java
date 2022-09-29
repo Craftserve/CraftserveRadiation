@@ -476,7 +476,7 @@ public final class RadiationPlugin extends JavaPlugin {
                         throw new InvalidConfigurationException(key + " is not a lugols-iodine-potion section.");
                     }
 
-                    potions.add(new LugolsIodinePotion.Config(section.getConfigurationSection(key)));
+                    potions.add(new LugolsIodinePotion.Config(potionsSection.getConfigurationSection(key)));
                 }
 
                 this.lugolsIodinePotions = Collections.unmodifiableCollection(potions);
