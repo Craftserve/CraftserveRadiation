@@ -45,9 +45,9 @@ import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -275,7 +275,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
                 throw new IOException("Could not write radiation IDs to bytes.", e);
             }
 
-            container.set(this.radiationIdsKey, PersistentDataType.BYTE_ARRAY, bytes);
+            if (bytes.length != 0) {
+                container.set(this.radiationIdsKey, PersistentDataType.BYTE_ARRAY, bytes);
+            }
         }
 
         container.set(this.durationSecondsKey, PersistentDataType.INTEGER, (int) duration.getSeconds());
@@ -292,11 +294,11 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         try (Closer closer = Closer.create()) {
             ByteArrayInputStream byteArrayInputStream = closer.register(new ByteArrayInputStream(bytes));
-            ObjectInputStream objectInputStream = closer.register(new ObjectInputStream(byteArrayInputStream));
+            DataInputStream dataInputStream = closer.register(new DataInputStream(byteArrayInputStream));
 
-            int count = objectInputStream.readInt();
+            int count = dataInputStream.readInt();
             for (int i = 0; i < count; i++) {
-                radiationIds.add(objectInputStream.readUTF());
+                radiationIds.add(dataInputStream.readUTF());
             }
         }
 
@@ -309,11 +311,11 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         byte[] bytes;
         try (Closer closer = Closer.create()) {
             ByteArrayOutputStream byteArrayOutputStream = closer.register(new ByteArrayOutputStream());
-            ObjectOutputStream objectOutputStream = closer.register(new ObjectOutputStream(byteArrayOutputStream));
+            DataOutputStream dataOutputStream = closer.register(new DataOutputStream(byteArrayOutputStream));
 
-            objectOutputStream.writeInt(radiationIds.size());
+            dataOutputStream.writeInt(radiationIds.size());
             for (String radiationId : radiationIds) {
-                objectOutputStream.writeUTF(radiationId);
+                dataOutputStream.writeUTF(radiationId);
             }
 
             bytes = byteArrayOutputStream.toByteArray();
