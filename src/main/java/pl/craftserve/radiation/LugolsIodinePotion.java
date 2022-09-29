@@ -77,6 +77,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     private NamespacedKey durationKey;
     private NamespacedKey durationSecondsKey;
 
+    private NamespacedKey recipeKey;
+
     public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.effect = Objects.requireNonNull(effect, "effect");
@@ -93,7 +95,8 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         Config.Recipe recipeConfig = this.config.recipe();
         if (recipeConfig.enabled()) {
-            nmsBridge.registerLugolsIodinePotion(this.potionKey, recipeConfig);
+            this.recipeKey = NamespacedKey.randomKey();
+            nmsBridge.registerLugolsIodinePotion(this.recipeKey, recipeConfig);
         }
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
@@ -103,7 +106,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         HandlerList.unregisterAll(this);
         if (this.config.recipe().enabled()) {
-            nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
+            nmsBridge.unregisterLugolsIodinePotion(this.recipeKey);
         }
     }
 
