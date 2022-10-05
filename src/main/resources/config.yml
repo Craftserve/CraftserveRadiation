@@ -43,8 +43,8 @@ lugols-iodine-potions:
   # was defined, then the "default" one is used. You can securely remove or
   # rename the "default" potion.
   # Note that the potion identifiers are stored in item meta. Modifying the
-  # identifier, or deleting or completely will make all existing items unusable
-  # on the server.
+  # identifier, or deleting it completely will make all existing potions with
+  # this identifier unusable on the server.
   default:
     recipe:
       # Should the potion be brewable in brewing stand?
