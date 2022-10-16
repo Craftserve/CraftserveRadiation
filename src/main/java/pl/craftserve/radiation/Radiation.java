@@ -114,11 +114,11 @@ public class Radiation implements Listener {
     private void broadcastEscape(Player player) {
         Objects.requireNonNull(player, "player");
 
-        String radiationId = this.config.id();
-        logger.info(player.getName() + " has entered \"" + radiationId + "\" radiation zone at " + player.getLocation());
+        String id = this.getId();
+        logger.info(player.getName() + " has entered \"" + id + "\" radiation zone at " + player.getLocation());
 
         this.config.enterMessage().ifPresent(rawMessage -> {
-            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, radiationId);
+            String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, id);
             for (Player online : this.plugin.getServer().getOnlinePlayers()) {
                 if (online.canSee(player)) {
                     online.sendMessage(message);
@@ -129,6 +129,10 @@ public class Radiation implements Listener {
 
     public Set<UUID> getAffectedPlayers() {
         return Collections.unmodifiableSet(this.affectedPlayers);
+    }
+
+    public String getId() {
+        return this.config.id();
     }
 
     public Matcher getMatcher() {

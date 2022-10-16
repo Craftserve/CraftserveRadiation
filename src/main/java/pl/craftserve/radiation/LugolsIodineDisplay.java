@@ -17,6 +17,9 @@
 package pl.craftserve.radiation;
 
 import org.bukkit.ChatColor;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,23 +30,39 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class LugolsIodineDisplay implements Listener {
-    private final Map<UUID, BossBar> displayMap = new HashMap<>(128);
+    static final Logger logger = Logger.getLogger(LugolsIodineDisplay.class.getName());
+
+    private static final String DEFAULT_BAR_ID = "default";
+    /** Fallback config when a silly user removes the default one. */
+    private static final BarConfig DEFAULT_BAR_CONFIG = new BarConfig(
+            "Lugol's Iodine Effect",
+            BarColor.GREEN,
+            BarStyle.SEGMENTED_20,
+            new BarFlag[0]);
+
+    private final Map<UUID, Display> displayMap = new HashMap<>(128);
     private final Plugin plugin;
-    private final LugolsIodineEffect effect;
-    private final BarConfig config;
+    private final LugolsIodineEffect effectHandler;
+    private final Map<String, BarConfig> configs;
 
     private Task task;
 
-    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effect, BarConfig config) {
+    public LugolsIodineDisplay(Plugin plugin, LugolsIodineEffect effectHandler, Map<String, BarConfig> configs) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
-        this.effect = Objects.requireNonNull(effect, "effect");
-        this.config = Objects.requireNonNull(config, "config");
+        this.effectHandler = Objects.requireNonNull(effectHandler, "effectHandler");
+        this.configs = Objects.requireNonNull(configs, "configs");
     }
 
     public void enable() {
@@ -60,57 +79,103 @@ public class LugolsIodineDisplay implements Listener {
             this.task.cancel();
         }
 
-        this.displayMap.values().forEach(BossBar::removeAll);
+        this.displayMap.values().forEach(Display::removeAll);
         this.displayMap.clear();
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
+        UUID playerId = event.getPlayer().getUniqueId();
+        Display display = this.displayMap.remove(playerId);
 
-        BossBar bossBar = this.displayMap.get(player.getUniqueId());
-        if (bossBar != null) {
-            bossBar.removePlayer(player);
+        if (display != null) {
+            display.removeAll();
         }
     }
 
-    private void add(Player player, LugolsIodineEffect.Effect effect) {
-        Objects.requireNonNull(player, "player");
-        Objects.requireNonNull(effect, "effect");
+    class Display {
+        private final Map<String, BossBar> bossBarMap = new LinkedHashMap<>();
 
-        BossBar bossBar = this.displayMap.computeIfAbsent(player.getUniqueId(), playerId -> this.createBossBar());
-        bossBar.setProgress(effect.getSecondsLeft() / (double) effect.getInitialSeconds());
-        bossBar.addPlayer(player);
-    }
+        BossBar add(Player player, LugolsIodineEffect.Effect effect) {
+            Objects.requireNonNull(player, "player");
+            Objects.requireNonNull(effect, "effect");
 
-    private void remove(Player player) {
-        Objects.requireNonNull(player, "player");
+            BossBar bossBar = this.bossBarMap.computeIfAbsent(effect.getId(), effectId -> {
+                return this.createBossBar(effect);
+            });
 
-        UUID playerId = player.getUniqueId();
-        BossBar bossBar = this.displayMap.get(playerId);
-
-        if (bossBar != null) {
-            bossBar.removePlayer(player);
-            this.displayMap.remove(playerId);
+            bossBar.setProgress((double) effect.getTimeLeft().toMillis() / effect.getInitialDuration().toMillis());
+            bossBar.addPlayer(player);
+            return bossBar;
         }
-    }
 
-    private BossBar createBossBar() {
-        return this.config.create(this.plugin.getServer(), ChatColor.GREEN);
+        void remove(Player player, String effectId) {
+            Objects.requireNonNull(player, "player");
+            Objects.requireNonNull(effectId, "effectId");
+
+            BossBar bossBar = this.bossBarMap.remove(effectId);
+            if (bossBar != null) {
+                bossBar.removePlayer(player);
+            }
+        }
+
+        void removeAll() {
+            this.bossBarMap.values().forEach(BossBar::removeAll);
+            this.bossBarMap.clear();
+        }
+
+        void update(Player player, List<LugolsIodineEffect.Effect> effectList) {
+            Objects.requireNonNull(player, "player");
+            Objects.requireNonNull(effectList, "effectList");
+
+            existingLoop: for (Map.Entry<String, BossBar> entry : new LinkedHashSet<>(this.bossBarMap.entrySet())) {
+                String effectId = entry.getKey();
+
+                for (LugolsIodineEffect.Effect next : effectList) {
+                    if (next.getId().equals(effectId)) {
+                        // We found matching effect in effectList, retain it.
+                        continue existingLoop;
+                    }
+                }
+
+                // We couldn't find matching effect in effectList, remove it.
+                this.remove(player, effectId);
+            }
+
+            for (LugolsIodineEffect.Effect newEffect : effectList) {
+                this.add(player, newEffect);
+            }
+        }
+
+        private BossBar createBossBar(LugolsIodineEffect.Effect effect) {
+            Objects.requireNonNull(effect, "effect");
+
+            BarConfig barConfig = configs.get(effect.getId());
+            if (barConfig == null) {
+                barConfig = configs.get(DEFAULT_BAR_ID);
+                if (barConfig == null) {
+                    barConfig = DEFAULT_BAR_CONFIG;
+                }
+            }
+
+            return barConfig.create(plugin.getServer(), ChatColor.GREEN);
+        }
     }
 
     class Task extends BukkitRunnable {
         @Override
         public void run() {
             plugin.getServer().getOnlinePlayers().forEach(player -> {
-                LugolsIodineEffect.Effect playerEffect = effect.getEffect(player);
-
-                if (playerEffect != null && playerEffect.getSecondsLeft() > 0) {
-                    add(player, playerEffect);
+                List<LugolsIodineEffect.Effect> effectList;
+                try {
+                    effectList = effectHandler.getEffects(player);
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Could not get lugol's iodine effects on '" + player.getName() + "'.", e);
                     return;
                 }
 
-                remove(player);
+                Display display = displayMap.computeIfAbsent(player.getUniqueId(), playerId -> new Display());
+                display.update(player, effectList);
             });
         }
     }

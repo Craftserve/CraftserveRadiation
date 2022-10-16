@@ -39,14 +39,23 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
+    static final Logger logger = Logger.getLogger(RadiationCommandHandler.class.getName());
+
     private static final String REGION_ID = "safe_from_radiation";
     private static final String GLOBAL_REGION_ID = "__global__";
 
@@ -55,12 +64,15 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
     private final Radiation.WorldGuardMatcher worldGuardMatcher = (player, regionContainer) -> {
         throw new UnsupportedOperationException();
     };
-    private final LugolsIodinePotion potion;
+    private final Function<String, LugolsIodinePotion> potionFinder;
+    private final Supplier<Spliterator<LugolsIodinePotion>> potionLister;
 
-    public RadiationCommandHandler(RadiationNmsBridge nmsBridge, Flag<Boolean> flag, LugolsIodinePotion potion) {
+    public RadiationCommandHandler(RadiationNmsBridge nmsBridge, Flag<Boolean> flag,
+                                   Function<String, LugolsIodinePotion> potionFinder, Supplier<Spliterator<LugolsIodinePotion>> potionLister) {
         this.nmsBridge = Objects.requireNonNull(nmsBridge, "nmsBridge");
         this.flag = Objects.requireNonNull(flag, "flag");
-        this.potion = potion;
+        this.potionFinder = Objects.requireNonNull(potionFinder, "potionFinder");
+        this.potionLister = Objects.requireNonNull(potionLister, "potionLister");
     }
 
     @Override
@@ -74,7 +86,7 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
         if (args.length > 0) {
             switch (args[0]) {
                 case "potion":
-                    return this.onPotion(player);
+                    return this.onPotion(player, label, args);
                 case "safe":
                     return this.onSafe(player, label, args);
             }
@@ -84,12 +96,42 @@ public class RadiationCommandHandler implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean onPotion(Player sender) {
-        ItemStack itemStack = this.potion.createItemStack(1);
+    private boolean onPotion(Player sender, String label, String[] args) {
+        String usage = ChatColor.RED + "/" + label + " potion <identifier>";
+        if (args.length == 1) {
+            String accessiblePotionIds = StreamSupport.stream(this.potionLister.get(), false)
+                    .map(LugolsIodinePotion::getId)
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+
+            sender.sendMessage(ChatColor.RED + "Provide lugol's iodine potion identifier in the first argument.");
+            sender.sendMessage(usage);
+            sender.sendMessage(ChatColor.RED + "Example: /" + label + " potion default");
+            sender.sendMessage(ChatColor.RED + "Accessible potions: " + accessiblePotionIds);
+            return true;
+        }
+
+        String id = args[1];
+        LugolsIodinePotion potion = this.potionFinder.apply(id);
+        if (potion == null) {
+            sender.sendMessage(ChatColor.RED + "Unknown lugol's iodine potion identifier: " + id);
+            sender.sendMessage(usage);
+            return true;
+        }
+
+        ItemStack itemStack;
+        try {
+            itemStack = potion.createItemStack(1);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Could not create potion item for '" + sender.getName() + "'.", e);
+            sender.sendMessage(ChatColor.RED + "An internal error has occurred while creating potion item. See console.");
+            return true;
+        }
+
         ItemMeta itemMeta = Objects.requireNonNull(itemStack.getItemMeta());
 
         if (sender.getInventory().addItem(itemStack).isEmpty()) {
-            sender.sendMessage(ChatColor.GREEN + "You have received one " + itemMeta.getDisplayName());
+            sender.sendMessage(ChatColor.GREEN + "You have received " + itemStack.getAmount() + " " + itemMeta.getDisplayName());
         } else {
             sender.sendMessage(ChatColor.RED + "Your inventory is full!");
         }

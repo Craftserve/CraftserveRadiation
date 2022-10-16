@@ -1,5 +1,5 @@
 # Indicates version of this file, please don't touch!
-file-protocol-version-dont-touch: 3
+file-protocol-version-dont-touch: 4
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # #                                                                                                         # # # #
@@ -14,52 +14,71 @@ file-protocol-version-dont-touch: 3
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
->>>>>>> 15e3bd2 (Welcoming title in config.yml)
 
-# Boss bar shown on the screen when player has lugol's iodine effect.
-lugols-iodine-bar:
-  # Colorable title shown on the bar.
-  title: 'Lugol''s Iodine Effect'
-  # Color of the bar, possible values:
-  # blue, green, pink, purple, red, white, yellow
-  color: green
-  # Style of the bar, possible values:
-  # segmented_6, segmented_10, segmented_12, segmented_20, solid
-  style: segmented_20
-  # Additional effects given for the player, possible values:
-  # create_fog, darken_sky, play_boss_music
-  flags: []
+# Boss bars shown on the screen when player has lugol's iodine effect.
+lugols-iodine-bars:
+  # The "default" bar. You can define as many bars as you want.
+  # It is recommended to not remove or rename the "default" bar, as it is used
+  # as fallback configuration when no bar from "lugols-iodine-potions" section
+  # could be found.
+  default:
+    # Colorable title shown on the bar.
+    title: 'Lugol''s Iodine Effect'
+    # Color of the bar, possible values:
+    # blue, green, pink, purple, red, white, yellow
+    color: green
+    # Style of the bar, possible values:
+    # segmented_6, segmented_10, segmented_12, segmented_20, solid
+    style: segmented_20
+    # Additional effects given for the player, possible values:
+    # create_fog, darken_sky, play_boss_music
+    flags: []
 
-# Lugol's iodine potion item options.
-lugols-iodine-potion:
-  recipe:
-    # Should the potion be brewable in brewing stand?
-    enabled: true
-    # Base potion type. List of potion types is available here:
-    # https://papermc.io/javadocs/paper/1.15/org/bukkit/potion/PotionType.html
-    base-potion: 'THICK'
-    # Ingredient item ID.
-    # IDs can be obtained when hovering over items using F3+H debug mode.
-    ingredient: 'ghast_tear'
+# Lugol's iodine potion item options. You csn define as many potions as you
+# want. Each one must have its own unique identifier, such as "default".
+lugols-iodine-potions:
+  # The "default" potion. Potion identifier is strongly associated with the
+  # lugols-iodine-bar identifier. Each lugol's iodine effect from the defined
+  # potion can have its own boss bar. If no boss bar with the potion identifier
+  # was defined, then the "default" one is used. You can securely remove or
+  # rename the "default" potion.
+  # Note that the potion identifiers are stored in item meta. Modifying the
+  # identifier, or deleting it completely will make all existing potions with
+  # this identifier unusable on the server.
+  default:
+    recipe:
+      # Should the potion be brewable in brewing stand?
+      enabled: true
+      # Base potion type. List of potion types is available here:
+      # https://papermc.io/javadocs/paper/1.15/org/bukkit/potion/PotionType.html
+      base-potion: 'THICK'
+      # Ingredient item ID.
+      # IDs can be obtained when hovering over items using F3+H debug mode.
+      ingredient: 'ghast_tear'
 
-  # Name of the item.
-  name: 'Lugol''s Iodine'
-  # Color of the potion in HEX format, leave empty for base potion color.
-  # Please visit https://htmlcolorcodes.com/ to obtain HEX color.
-  color: '#197d14'
-  # Description of the item. {0} will be replaced with the duration of the potion effect.
-  description: 'Radiation resistance ({0})'
-  # Duration in seconds of effect given when a player consumes the potion, 10 seconds by default.
-  duration: 600
-  # Colorable broadcast message shown when a player consumes the potion, leave empty for no message.
-  drink-message: '{0}&c drank {1}.'
+    # Name of the item.
+    name: 'Lugol''s Iodine'
+    # Color of the potion in HEX format, leave empty for base potion color.
+    # Please visit https://htmlcolorcodes.com/ to obtain HEX color.
+    color: '#197d14'
+    # Description of the item. {0} will be replaced with the duration of the potion effect.
+    description: 'Radiation resistance ({0})'
+    # List of radiation type identifiers which this potion will work in.
+    # An empty list makes this potion work in ALL radiation zones.
+    # Please keep in mind that changing this option will not affect already
+    # crafted or brewed potions.
+    radiation-ids: []
+    # Duration in seconds of effect given when a player consumes the potion, 10 seconds by default.
+    duration: 600
+    # Colorable broadcast message shown when a player consumes the potion, leave empty for no message.
+    drink-message: '{0}&c drank {1}.'
 
 # Radiation zone options. You can define as many radiation types as you want.
 # Each one must have its own unique identifier, such as "default".
 # Use "radiation-type" flag to declare region a specific radiation type.
 radiations:
   # The "default" radiation, used when "radiation-type" flag is not set.
-  # It is recommended to not remove the "default" radiation.
+  # It is recommended to not remove or rename the "default" radiation.
   default:
     # Boss bar shown on the screen when a player is in the zone.
     bar:

@@ -16,6 +16,7 @@
 
 package pl.craftserve.radiation;
 
+import com.google.common.io.Closer;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -42,10 +43,17 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 import pl.craftserve.radiation.nms.RadiationNmsBridge;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -64,9 +72,13 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     private final LugolsIodineEffect effect;
     private final Config config;
 
-    private NamespacedKey potionKey;
-    private NamespacedKey durationKey;
+    private NamespacedKey potionIdKey;
+    private NamespacedKey radiationIdsKey;
     private NamespacedKey durationSecondsKey;
+    private NamespacedKey legacyPotionKey;
+    private NamespacedKey legacyDurationKey;
+
+    private NamespacedKey recipeKey;
 
     public LugolsIodinePotion(Plugin plugin, LugolsIodineEffect effect, Config config) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -77,13 +89,16 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     public void enable(RadiationNmsBridge nmsBridge) {
         Objects.requireNonNull(nmsBridge, "nmsBridge");
 
-        this.potionKey = new NamespacedKey(this.plugin, "lugols_iodine");
-        this.durationKey = new NamespacedKey(this.plugin, "duration");
+        this.potionIdKey = new NamespacedKey(this.plugin, "lugols_iodine_id");
+        this.radiationIdsKey = new NamespacedKey(this.plugin, "radiation_ids");
         this.durationSecondsKey = new NamespacedKey(this.plugin, "duration_seconds");
+        this.legacyPotionKey = new NamespacedKey(this.plugin, "lugols_iodine");
+        this.legacyDurationKey = new NamespacedKey(this.plugin, "duration");
 
         Config.Recipe recipeConfig = this.config.recipe();
         if (recipeConfig.enabled()) {
-            nmsBridge.registerLugolsIodinePotion(this.potionKey, recipeConfig);
+            this.recipeKey = NamespacedKey.randomKey();
+            nmsBridge.registerLugolsIodinePotion(this.recipeKey, recipeConfig);
         }
         this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
@@ -93,7 +108,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         HandlerList.unregisterAll(this);
         if (this.config.recipe().enabled()) {
-            nmsBridge.unregisterLugolsIodinePotion(this.potionKey);
+            nmsBridge.unregisterLugolsIodinePotion(this.recipeKey);
         }
     }
 
@@ -109,10 +124,16 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return false;
         }
 
+        String id = this.config.id();
+
         PersistentDataContainer container = itemStack.getItemMeta().getPersistentDataContainer();
-        if (container.has(this.potionKey, PersistentDataType.BYTE)) {
-            Byte value = container.get(this.potionKey, PersistentDataType.BYTE);
+        if (id.equals(Config.DEFAULT_ID) && container.has(this.legacyPotionKey, PersistentDataType.BYTE)) { // legacy
+            Byte value = container.get(this.legacyPotionKey, PersistentDataType.BYTE);
             return value != null && value == TRUE;
+        }
+
+        if (container.has(this.potionIdKey, PersistentDataType.STRING)) {
+            return id.equals(container.get(this.potionIdKey, PersistentDataType.STRING));
         }
 
         return false;
@@ -125,29 +146,50 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             return;
         }
 
+        Player player = event.getPlayer();
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
 
-        int durationSeconds = 0;
-        if (container.has(this.durationSecondsKey, PersistentDataType.INTEGER)) {
-            durationSeconds = container.getOrDefault(this.durationSecondsKey, PersistentDataType.INTEGER, 0);
-        } else if (container.has(this.durationKey, PersistentDataType.INTEGER)) {
-            durationSeconds = (int) TimeUnit.MINUTES.toSeconds(container.getOrDefault(this.durationKey, PersistentDataType.INTEGER, 0)); // legacy
+        List<String> radiationIds = null;
+        if (container.has(this.radiationIdsKey, PersistentDataType.BYTE_ARRAY)) {
+            byte[] bytes = container.get(this.radiationIdsKey, PersistentDataType.BYTE_ARRAY);
+
+            if (bytes != null && bytes.length != 0) {
+                try {
+                    radiationIds = this.readRadiationIds(bytes);
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Could not read radiation IDs from bytes on '" + player.getName() +  "'.", e);
+                    return;
+                }
+            }
         }
 
-        if (durationSeconds <= 0) {
+        Duration duration = Duration.ZERO;
+        if (container.has(this.durationSecondsKey, PersistentDataType.INTEGER)) {
+            duration = Duration.ofSeconds(container.getOrDefault(this.durationSecondsKey, PersistentDataType.INTEGER, 0));
+        } else if (container.has(this.legacyDurationKey, PersistentDataType.INTEGER)) {
+            duration = Duration.ofMinutes(container.getOrDefault(this.legacyDurationKey, PersistentDataType.INTEGER, 0)); // legacy
+        }
+
+        if (duration.isNegative() || duration.isZero()) {
             return;
         }
 
-        Player player = event.getPlayer();
-        this.effect.setEffect(player, durationSeconds);
-        this.broadcastConsumption(player, durationSeconds);
+        try {
+            this.effect.appendEffect(player, new LugolsIodineEffect.Effect(this.getId(), duration, radiationIds));
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Could not set lugol's iodine potion effect on '" + player.getName() + "'.");
+            return;
+        }
+
+        this.broadcastConsumption(player, duration);
     }
 
-    private void broadcastConsumption(Player player, int durationSeconds) {
+    private void broadcastConsumption(Player player, Duration duration) {
         Objects.requireNonNull(player, "player");
+        Objects.requireNonNull(duration, "duration");
 
         String name = this.config.name();
-        logger.info(player.getName() + " has consumed " + name + " with a duration of " + durationSeconds + " seconds");
+        logger.info(player.getName() + " has consumed " + name + " with a duration of " + duration.getSeconds() + " seconds");
 
         this.config.drinkMessage().ifPresent(rawMessage -> {
             String message = ChatColor.RED + MessageFormat.format(rawMessage, player.getDisplayName() + ChatColor.RESET, name);
@@ -188,7 +230,12 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
             PotionMeta potionMeta = (PotionMeta) itemMeta;
             if (potionMeta.getBasePotionData().getType().equals(recipeConfig.basePotion())) {
-                result.setItemMeta(this.convert(potionMeta));
+                try {
+                    result.setItemMeta(this.convert(potionMeta));
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Could not transform potion to lugol's iodine.", e);
+                    continue;
+                }
 
                 modified[i] = true;
             }
@@ -206,7 +253,7 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         });
     }
 
-    public ItemStack createItemStack(int amount) {
+    public ItemStack createItemStack(int amount) throws IOException {
         ItemStack itemStack = new ItemStack(Material.POTION, amount);
         PotionMeta potionMeta = (PotionMeta) Objects.requireNonNull(itemStack.getItemMeta());
 
@@ -217,11 +264,11 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         return itemStack;
     }
 
-    public PotionMeta convert(PotionMeta potionMeta) {
+    public PotionMeta convert(PotionMeta potionMeta) throws IOException {
         Objects.requireNonNull(potionMeta, "potionMeta");
 
         Duration duration = this.getDuration();
-        String formattedDuration = this.formatDuration(duration);
+        String formattedDuration = formatDuration(duration);
 
         this.config.color().ifPresent(potionMeta::setColor);
         potionMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
@@ -229,12 +276,67 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
         potionMeta.setLore(Collections.singletonList(ChatColor.BLUE + MessageFormat.format(this.config.description(), formattedDuration)));
 
         PersistentDataContainer container = potionMeta.getPersistentDataContainer();
-        container.set(this.potionKey, PersistentDataType.BYTE, TRUE);
+        container.set(this.potionIdKey, PersistentDataType.STRING, this.config.id());
+
+        List<String> radiationIds = this.config.radiationIds();
+        if (radiationIds != null && !radiationIds.isEmpty()) {
+            byte[] bytes;
+            try {
+                bytes = this.writeRadiationIds(radiationIds);
+            } catch (IOException e) {
+                throw new IOException("Could not write radiation IDs to bytes.", e);
+            }
+
+            if (bytes.length != 0) {
+                container.set(this.radiationIdsKey, PersistentDataType.BYTE_ARRAY, bytes);
+            }
+        }
+
         container.set(this.durationSecondsKey, PersistentDataType.INTEGER, (int) duration.getSeconds());
         return potionMeta;
     }
 
-    public String formatDuration(Duration duration) {
+    public String getId() {
+        return this.config.id();
+    }
+
+    private List<String> readRadiationIds(byte[] bytes) throws IOException {
+        Objects.requireNonNull(bytes, "bytes");
+        List<String> radiationIds = new ArrayList<>();
+
+        try (Closer closer = Closer.create()) {
+            ByteArrayInputStream byteArrayInputStream = closer.register(new ByteArrayInputStream(bytes));
+            DataInputStream dataInputStream = closer.register(new DataInputStream(byteArrayInputStream));
+
+            int count = dataInputStream.readInt();
+            for (int i = 0; i < count; i++) {
+                radiationIds.add(dataInputStream.readUTF());
+            }
+        }
+
+        return radiationIds;
+    }
+
+    private byte[] writeRadiationIds(List<String> radiationIds) throws IOException {
+        Objects.requireNonNull(radiationIds, "radiationIds");
+
+        byte[] bytes;
+        try (Closer closer = Closer.create()) {
+            ByteArrayOutputStream byteArrayOutputStream = closer.register(new ByteArrayOutputStream());
+            DataOutputStream dataOutputStream = closer.register(new DataOutputStream(byteArrayOutputStream));
+
+            dataOutputStream.writeInt(radiationIds.size());
+            for (String radiationId : radiationIds) {
+                dataOutputStream.writeUTF(radiationId);
+            }
+
+            bytes = byteArrayOutputStream.toByteArray();
+        }
+
+        return bytes;
+    }
+
+    static String formatDuration(Duration duration) {
         Objects.requireNonNull(duration, "duration");
 
         long seconds = duration.getSeconds();
@@ -295,18 +397,24 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
     //
 
     public static class Config {
+        public static final String DEFAULT_ID = "default";
+
+        private final String id;
         private final Recipe recipe;
         private final String name;
         private final Color color;
         private final String description;
+        private final List<String> radiationIds;
         private final Duration duration;
         private final String drinkMessage;
 
-        public Config(Recipe recipe, String name, Color color, String description, Duration duration, String drinkMessage) {
+        public Config(String id, Recipe recipe, String name, Color color, String description, List<String> radiationIds, Duration duration, String drinkMessage) {
+            this.id = Objects.requireNonNull(id, "id");
             this.recipe = Objects.requireNonNull(recipe, "recipe");
             this.name = Objects.requireNonNull(name, "name");
             this.color = color;
             this.description = Objects.requireNonNull(description, "description");
+            this.radiationIds = Objects.requireNonNull(radiationIds, "radiationIds");
             this.duration = Objects.requireNonNull(duration, "duration");
             this.drinkMessage = drinkMessage;
         }
@@ -315,6 +423,9 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             if (section == null) {
                 section = new MemoryConfiguration();
             }
+
+            String id = section.getName();
+            this.id = id.isEmpty() ? DEFAULT_ID : id;
 
             this.recipe = new Recipe(section.getConfigurationSection("recipe"));
             this.name = Objects.requireNonNull(section.getString("name", "Lugol's Iodine"));
@@ -331,6 +442,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             }
 
             this.description = Objects.requireNonNull(section.getString("description", "Radiation resistance ({0})"));
+
+            List<String> radiationIds = section.getStringList("radiation-ids");
+            this.radiationIds = radiationIds.isEmpty() ? null : radiationIds;
+
             this.duration = Objects.requireNonNull(Duration.ofSeconds(section.getInt("duration", 600)));
 
             String drinkMessage = RadiationPlugin.colorize(section.getString("drink-message"));
@@ -339,6 +454,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
             if (this.duration.isZero() || this.duration.isNegative()) {
                 throw new InvalidConfigurationException("Given potion duration must be positive.");
             }
+        }
+
+        public String id() {
+            return this.id;
         }
 
         public Recipe recipe() {
@@ -355,6 +474,10 @@ public class LugolsIodinePotion implements Listener, Predicate<ItemStack> {
 
         public String description() {
             return this.description;
+        }
+
+        public List<String> radiationIds() {
+            return this.radiationIds;
         }
 
         public Duration duration() {
