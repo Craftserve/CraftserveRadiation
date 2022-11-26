@@ -34,7 +34,7 @@ lugols-iodine-bars:
     # create_fog, darken_sky, play_boss_music
     flags: []
 
-# Lugol's iodine potion item options. You csn define as many potions as you
+# Lugol's iodine potion item options. You can define as many potions as you
 # want. Each one must have its own unique identifier, such as "default".
 lugols-iodine-potions:
   # The "default" potion. Potion identifier is strongly associated with the
