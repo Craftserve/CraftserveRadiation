@@ -39,6 +39,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -260,6 +262,12 @@ public class Radiation implements Listener {
             String radiationId = regions.queryValue(localPlayer, this.radiationTypeFlag);
             if (radiationId == null || radiationId.isEmpty()) {
                 radiationId = Config.DEFAULT_ID;
+            }
+
+            Permission permission = new Permission("craftserveradiation.immune." + radiationId, PermissionDefault.FALSE);
+            if (player.hasPermission(permission)) {
+                // Players with this permission are immune to radiation. They won't match this matcher.
+                return false;
             }
 
             return this.acceptedRadiationTypes.contains(radiationId);
