@@ -20,6 +20,7 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.RegionGroup;
 import com.sk89q.worldguard.protection.flags.StringFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -68,7 +69,7 @@ public final class RadiationPlugin extends JavaPlugin {
     }
 
     private static final int CURRENT_PROTOCOL_VERSION = 4;
-    private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation");
+    private static final Flag<Boolean> RADIATION_FLAG = new BooleanFlag("radiation", RegionGroup.NON_MEMBERS);
     private static final Flag<String> RADIATION_TYPE_FLAG = new StringFlag("radiation-type");
 
     private Flag<Boolean> radiationFlag;
