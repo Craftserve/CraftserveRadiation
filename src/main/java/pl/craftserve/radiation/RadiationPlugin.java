@@ -44,6 +44,7 @@ import pl.craftserve.radiation.nms.V1_17_R1NmsBridge;
 import pl.craftserve.radiation.nms.V1_18_R1NmsBridge;
 import pl.craftserve.radiation.nms.V1_18_R2NmsBridge;
 import pl.craftserve.radiation.nms.V1_19_R1NmsBridge;
+import pl.craftserve.radiation.nms.V1_19_R2NmsBridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -105,6 +106,8 @@ public final class RadiationPlugin extends JavaPlugin {
                 return new V1_18_R2NmsBridge(serverVersion);
             case "v1_19_R1":
                 return new V1_19_R1NmsBridge(serverVersion);
+            case "v1_19_R2":
+                return new V1_19_R2NmsBridge(serverVersion);
             default:
                 throw new RuntimeException("Unsupported server version: " + serverVersion);
         }
